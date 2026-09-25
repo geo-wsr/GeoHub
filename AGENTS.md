@@ -332,6 +332,10 @@ print([hex(ord(c)) for c in value])
 - **Serverless 部署链路（方案 2，免 ICP 备案）**：根目录 `render.yaml` 蓝图（Render 免费实例 +
   gunicorn + 启动时自动迁移）、`DATABASE_URL` 连 Neon Postgres、`AWS_*` 一组变量切到 Cloudflare R2、
   WhiteNoise 托管 `/static/`；`.github/workflows/deploy-backend.yml` 已改为触发 Render 部署钩子
+- **线上已上线（2026-09-26）**：前端 <https://geo-wsr.github.io/GeoHub/>、后端
+  <https://api.bnugeohub.cn>（Render `geohub-api`，自定义域名已签证书）、数据库 Neon、
+  文件存 Supabase Storage 桶 `geohub-media`（无国际卡，改用 Supabase 而非 R2）；
+  生产库已 `seed_data`（5 分类 + 6 板块）并建好超级管理员 `quanhezi`
 - 超级管理员已创建（用户名 `quanhezi`；**密码不记录在本文件**，需要时问维护者）
 
 尚未做，接到相关需求时按需补齐：

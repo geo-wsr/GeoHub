@@ -17,6 +17,24 @@ GitHub 仓库（单仓）
 
 ---
 
+## 0. 当前线上环境（2026-09-26 已按本文件配置完成）
+
+| 组件 | 实例 | 地址 |
+| --- | --- | --- |
+| 前端 | GitHub Pages（仓库子路径部署） | <https://geo-wsr.github.io/GeoHub/> |
+| 后端 | Render Web Service `geohub-api`（Free / Oregon） | <https://api.bnugeohub.cn> |
+| 数据库 | Neon Postgres（项目 `ancient-band-34291622`） | 经 `DATABASE_URL` 注入 |
+| 文件 | Supabase Storage 桶 `geohub-media`（project-ref `bijdpcttmcakrvjnxugl`） | `…/storage/v1/object/public/geohub-media` |
+
+- Render 服务 ID `srv-dar9g3m0tbcc739hjeeg`，蓝图 ID `exs-dar9dnrncjis73ckohrg`；
+  **免费实例没有 Web Shell / SSH**，一次性管理命令在本机连生产库执行（见 3.5）
+- 仓库已配置：Variable `API_BASE_URL=https://api.bnugeohub.cn`、Secret `RENDER_DEPLOY_HOOK`
+- DNS：DNSPod 里 `api` 的 CNAME → `geohub-api.onrender.com`，HTTPS 证书由 Render 自动签发
+- 管理后台：<https://api.bnugeohub.cn/admin/>（超级管理员 `quanhezi`，密码由维护者保管）
+- 本地开发不受影响：`frontend/dist` 不提交，本地构建不带 `VITE_API_BASE_URL`，仍然走同源 `/api`
+
+---
+
 ## 1. 仓库侧一次性配置
 
 ### 1.1 开启 GitHub Pages
