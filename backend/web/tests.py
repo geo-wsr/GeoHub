@@ -5,6 +5,7 @@
 """
 
 import tempfile
+from urllib.parse import parse_qs, urlparse
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
@@ -503,3 +504,46 @@ class SearchTests(BaseAPITestCase):
         payload = self.client.get('/api/search/?q=').json()
         self.assertEqual(payload['material_total'], 0)
         self.assertEqual(payload['topic_total'], 0)
+
+
+class GitHubOAuthTests(BaseAPITestCase):
+    """GitHub 登录接线：确认授权地址、回调路径与 scope 正确。
+
+    回调地址填错是 OAuth 最常见的故障（GitHub 会直接报 redirect_uri_mismatch），
+    所以把它固化成测试。这里用的 client_id/secret 是测试占位值，不是真实凭据。
+    """
+
+    FAKE_PROVIDERS = {
+        'github': {
+            'APP': {'client_id': 'test-client-id', 'secret': 'test-secret', 'key': ''},
+            'SCOPE': ['user:email'],
+        }
+    }
+
+    def test_providers_endpoint_exposes_login_url(self):
+        payload = self.client.get('/api/auth/providers/').json()
+        self.assertFalse(payload['github']['enabled'])  # 测试环境未配置真实凭据
+        self.assertTrue(payload['github']['login_url'].endswith('/accounts/github/login/?process=login'))
+
+    @override_settings(SOCIALACCOUNT_PROVIDERS=FAKE_PROVIDERS)
+    def test_providers_endpoint_enabled_when_configured(self):
+        payload = self.client.get('/api/auth/providers/').json()
+        self.assertTrue(payload['github']['enabled'])
+
+    @override_settings(SOCIALACCOUNT_PROVIDERS=FAKE_PROVIDERS)
+    def test_login_redirects_to_github_with_correct_callback(self):
+        response = self.client.get('/accounts/github/login/?process=login')
+        self.assertEqual(response.status_code, 302)
+
+        location = response['Location']
+        self.assertIn('github.com/login/oauth/authorize', location)
+
+        params = parse_qs(urlparse(location).query)
+        self.assertEqual(params.get('client_id'), ['test-client-id'])
+        self.assertEqual(params.get('response_type'), ['code'])
+        self.assertEqual(params.get('scope'), ['user:email'])
+
+        # 回调必须是后端的 /accounts/github/login/callback/，
+        # 生产环境就会是 https://<后端域名>/accounts/github/login/callback/
+        redirect_uri = params.get('redirect_uri', [''])[0]
+        self.assertIn('/accounts/github/login/callback/', redirect_uri)
