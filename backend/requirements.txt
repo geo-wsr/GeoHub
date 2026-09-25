@@ -1,0 +1,16 @@
+# Python 3.13（开发机）/ 3.13（服务器）
+# 安装：D:\mywebsite\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
+Django==5.2.17
+django-simpleui==2026.1.13
+djangorestframework==3.18.1
+# —— GitHub 集成新增 ——
+django-cors-headers==4.9.0
+django-allauth==65.19.4
+requests==2.34.2
+asgiref==3.12.1
+sqlparse==0.6.0
+tzdata==2026.4
+certifi==2026.7.22
+charset-normalizer==3.5.1
+idna==3.20
+urllib3==2.8.0

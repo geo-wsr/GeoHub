@@ -1,23 +1,33 @@
 import axios from 'axios'
 
+// 后端接口地址：生产由 CI 注入云服务器域名，开发留空则走 Vite 代理（见 vite.config.js）
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '')
+export const API_ROOT = `${API_BASE_URL}/api`
+
 const client = axios.create({
-  baseURL: '/api',
+  baseURL: API_ROOT,
   timeout: 30000,
+  // 跨域部署必须带上 Cookie（Session 认证）
   withCredentials: true,
   headers: { Accept: 'application/json' },
 })
+
+// CSRF token 缓存：跨域时前端读不到后端的 csrftoken Cookie，只能用响应体里的值
+let csrfToken = null
 
 function readCookie(name) {
   const match = document.cookie.match(new RegExp(`(^|;\\s*)${name}=([^;]*)`))
   return match ? decodeURIComponent(match[2]) : null
 }
 
-// 每个写请求都重新读取 csrftoken：
-// Django 在登录成功后会轮换 CSRF token，缓存旧值会直接导致 403。
+// 写请求统一带上 X-CSRFToken。
+// 跨域部署时 token 来自 /auth/csrf/ 响应体（缓存），同源时回落读取 Cookie；
+// 登录/登出后 Django 会轮换 token，由 stores/auth.js 重新调用 ensureCsrf()。
 client.interceptors.request.use((config) => {
   const method = (config.method || 'get').toLowerCase()
   if (['post', 'put', 'patch', 'delete'].includes(method)) {
-    const token = readCookie('csrftoken')
+    // 优先用 /auth/csrf/ 下发的 token，同源场景回落读取 Cookie
+    const token = csrfToken || readCookie('csrftoken')
     if (token) config.headers['X-CSRFToken'] = token
   }
   return config
@@ -36,7 +46,14 @@ export function errorMessage(error) {
 }
 
 export const api = {
-  ensureCsrf: () => client.get('/auth/csrf/').then((r) => r.data),
+  // 第三方登录入口（GitHub）：由后端告诉前端可用性与地址，前端不硬编码
+  authProviders: () => client.get('/auth/providers/').then((r) => r.data),
+  // 取回并缓存 CSRF token；登录/登出后 Django 会轮换 token，需要重新调用
+  ensureCsrf: async () => {
+    const data = await client.get('/auth/csrf/').then((r) => r.data)
+    if (data.csrfToken) csrfToken = data.csrfToken
+    return data
+  },
   me: () => client.get('/auth/me/').then((r) => r.data),
   login: (payload) => client.post('/auth/login/', payload).then((r) => r.data),
   register: (payload) => client.post('/auth/register/', payload).then((r) => r.data),
@@ -119,7 +136,8 @@ export const api = {
 
 /** 下载走浏览器原生跳转：Content-Disposition: attachment 不会离开当前页。 */
 export function downloadUrl(materialId) {
-  return `/api/materials/${materialId}/download/`
+  // 跨域部署时下载同样要指向后端域名，浏览器会带上 Session Cookie
+  return `${API_ROOT}/materials/${materialId}/download/`
 }
 
 export default client

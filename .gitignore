@@ -2,6 +2,8 @@
 .venv/
 venv/
 env/
+backend/.venv/
+backend/venv/
 
 # Python
 __pycache__/
@@ -13,17 +15,17 @@ __pycache__/
 # Django
 db.sqlite3
 db.sqlite3-journal
-/staticfiles/
-/media/
+staticfiles/
+media/
 *.log
 
 # Node / 前端
 node_modules/
-frontend/dist/
+dist/
 npm-debug.log*
 yarn-error.log*
 
-# Env / secrets
+# 本地环境变量与密钥（.env.example 是模板，允许入库）
 .env
 .env.*
 !.env.example

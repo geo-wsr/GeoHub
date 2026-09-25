@@ -1,10 +1,13 @@
 import os
 
+from django.conf import settings
+
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Count, F, Q
 from django.http import FileResponse, Http404
+from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -119,8 +122,12 @@ class FavoritedIdsContextMixin:
 @permission_classes([AllowAny])
 @ensure_csrf_cookie
 def csrf_view(request):
-    """前端启动时调用一次，确保拿到 csrftoken cookie，后续写请求带上它。"""
-    return Response({'detail': 'CSRF cookie set'})
+    """
+    返回 CSRF token 并下发 csrftoken Cookie。
+    同源部署靠 Cookie 即可；GitHub Pages 跨域部署时前端读不到后端 Cookie，
+    所以同时把 token 放进响应体，由前端保存后在 X-CSRFToken 头里回传。
+    """
+    return Response({'detail': 'CSRF cookie set', 'csrfToken': get_token(request)})
 
 
 @api_view(['POST'])
@@ -181,6 +188,22 @@ def me_view(request):
     if not request.user.is_authenticated:
         return Response({'user': None})
     return Response({'user': CurrentUserSerializer(request.user).data})
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def auth_providers(request):
+    """前端登录页据此渲染第三方登录入口，避免前端硬编码后端路径。"""
+    github_app = settings.SOCIALACCOUNT_PROVIDERS.get('github', {}).get('APP', {})
+    return Response(
+        {
+            'github': {
+                'enabled': bool(github_app.get('client_id')),
+                'login_url': request.build_absolute_uri('/accounts/github/login/')
+                + '?process=login',
+            }
+        }
+    )
 
 
 # --------------------------------------------------------------------------

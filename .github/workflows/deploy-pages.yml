@@ -1,0 +1,100 @@
+# ==========================================================================
+# 前端部署：Vue 构建产物发布到 GitHub Pages（只托管静态资源，不含任何后端逻辑）
+#   触发条件：frontend/ 变更推送到 main，或手动触发（Actions 页面 Run workflow）
+#   前置条件：仓库 Settings → Pages → Source 选择 “GitHub Actions”
+#   需要的仓库变量（Settings → Secrets and variables → Actions → Variables）：
+#     API_BASE_URL      生产后端地址，例如 https://api.example.com（不要带结尾斜杠）
+#     PAGES_BASE_PATH   可选。自定义域名填 /；仓库子路径留空（自动用 /<仓库名>/）
+# ==========================================================================
+name: Deploy frontend to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+# GitHub Pages 官方部署所需的三项权限，缺一会失败
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只允许一次部署，新推送取消排队中的旧任务
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # 计算资源基础路径：自定义域名用 /，仓库子路径用 /<仓库名>/
+      - name: Resolve base path
+        id: base
+        env:
+          CUSTOM_BASE: ${{ vars.PAGES_BASE_PATH }}
+        run: |
+          set -euo pipefail
+          if [ -n "${CUSTOM_BASE}" ]; then
+            BASE="${CUSTOM_BASE}"
+          else
+            BASE="/${{ github.event.repository.name }}/"
+          fi
+          case "$BASE" in
+            */) ;;
+            *) BASE="${BASE}/" ;;
+          esac
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          echo "资源基础路径 base = $BASE"
+
+      # 注入生产后端地址并构建；构建脚本会顺带生成 404.html（SPA 刷新兜底）
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: ${{ vars.API_BASE_URL }}
+          VITE_BASE_PATH: ${{ steps.base.outputs.base }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VITE_API_BASE_URL}" ]; then
+            echo "::warning::未设置仓库变量 API_BASE_URL，构建产物会退化为同源 /api，部署到 Pages 后接口将不可用。"
+          fi
+          npm run build
+          echo "构建产物："
+          ls -la dist | head -20
+          test -f dist/404.html || { echo "::error::缺少 404.html，SPA 子路由刷新会 404"; exit 1; }
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

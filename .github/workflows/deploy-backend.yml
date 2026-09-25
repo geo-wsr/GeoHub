@@ -1,0 +1,113 @@
+# ==========================================================================
+# 后端部署：SSH 连接云服务器，拉代码 → 装依赖 → 迁移 → 重启服务
+#   触发条件：backend/ 变更推送到 main，或手动触发
+#   需要的 Secrets（Settings → Secrets and variables → Actions → Secrets）：
+#     SSH_HOST           服务器地址（IP 或域名）
+#     SSH_USER           登录用户，例如 deploy
+#     SSH_PRIVATE_KEY    部署专用私钥内容（整段，含 BEGIN/END）
+#     SSH_PORT           可选，默认 22
+#     DEPLOY_PATH        服务器上的仓库路径，例如 /srv/mywebsite
+#     SERVICE_NAME       systemd 服务名，例如 mywebsite
+#   服务器一次性准备步骤见 docs/github-integration.md
+# ==========================================================================
+name: Deploy backend to server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'deploy/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: backend-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare SSH key
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # 固定主机指纹，避免中间人风险；失败时给出可读提示
+          if ! ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null; then
+            echo "::error::无法获取 $SSH_HOST 的 SSH 指纹，请确认服务器可达与端口开放"
+            exit 1
+          fi
+
+      - name: Deploy over SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
+        run: |
+          set -euo pipefail
+          PORT="${SSH_PORT:-22}"
+          ssh -i ~/.ssh/deploy_key -p "$PORT" -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" \
+            "DEPLOY_PATH='$DEPLOY_PATH' SERVICE_NAME='$SERVICE_NAME' bash -s" <<'REMOTE'
+          # ---------- 服务器侧执行 ----------
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+
+          echo "::group::1/5 拉取最新代码"
+          git fetch --prune origin
+          git pull --ff-only origin main
+          git --no-pager log -1 --oneline
+          echo "::endgroup::"
+
+          echo "::group::2/5 安装 Python 依赖"
+          # 虚拟环境在仓库根下的 .venv（见 docs/github-integration.md 的一次性准备）
+          ./.venv/bin/python -m pip install --upgrade pip
+          ./.venv/bin/python -m pip install -r backend/requirements-prod.txt
+          echo "::endgroup::"
+
+          echo "::group::3/5 数据库迁移"
+          cd backend
+          ../.venv/bin/python manage.py migrate --noinput
+          echo "::endgroup::"
+
+          echo "::group::4/5 收集静态文件（后台 SimpleUI 等）"
+          ../.venv/bin/python manage.py collectstatic --noinput
+          echo "::endgroup::"
+
+          echo "::group::5/5 重启服务"
+          if ! sudo systemctl restart "$SERVICE_NAME"; then
+            echo "::error::重启 $SERVICE_NAME 失败，以下是最近 80 行日志："
+            sudo systemctl status "$SERVICE_NAME" --no-pager || true
+            sudo journalctl -u "$SERVICE_NAME" -n 80 --no-pager || true
+            exit 1
+          fi
+          sleep 3
+          if ! systemctl is-active --quiet "$SERVICE_NAME"; then
+            echo "::error::服务未处于运行状态，以下是最近 80 行日志："
+            sudo journalctl -u "$SERVICE_NAME" -n 80 --no-pager || true
+            exit 1
+          fi
+          sudo systemctl status "$SERVICE_NAME" --no-pager | head -12
+          echo "::endgroup::"
+
+          echo "后端部署完成 ✅"
+          REMOTE
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "::error::后端部署失败。排查顺序："
+          echo "1) Secrets 是否齐全（SSH_HOST / SSH_USER / SSH_PRIVATE_KEY / DEPLOY_PATH / SERVICE_NAME）"
+          echo "2) 服务器上 ${{ secrets.DEPLOY_PATH }} 是否为 git 仓库并已配置 origin"
+          echo "3) 登录服务器执行：sudo journalctl -u ${{ secrets.SERVICE_NAME }} -n 100 --no-pager"

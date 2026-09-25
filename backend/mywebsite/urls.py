@@ -24,6 +24,8 @@ from web.views import spa_index
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('web.api_urls')),
+    # django-allauth：第三方登录入口与回调（/accounts/github/login/ 等）
+    path('accounts/', include('allauth.urls')),
     # 其余路径交给 Vue SPA 的前端路由
     re_path(r'^(?!static/|media/).*$', spa_index, name='spa'),
 ]

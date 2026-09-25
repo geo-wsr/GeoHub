@@ -3,7 +3,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { loadCurrentUser } from '@/stores/auth'
 
 const router = createRouter({
-  history: createWebHistory(),
+  // base 必须与构建时的 base 一致，否则 GitHub Pages 子路径部署下路由会错位
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
@@ -74,6 +75,12 @@ const router = createRouter({
       name: 'login',
       component: () => import('@/views/LoginView.vue'),
       meta: { title: '登录' },
+    },
+    {
+      path: '/oauth/callback',
+      name: 'oauth-callback',
+      component: () => import('@/views/OAuthCallbackView.vue'),
+      meta: { title: 'GitHub 登录' },
     },
     {
       path: '/:pathMatch(.*)*',

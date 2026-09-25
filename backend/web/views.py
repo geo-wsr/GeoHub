@@ -4,7 +4,7 @@ from django.conf import settings
 from django.http import HttpResponse, HttpResponseRedirect
 
 # Vite 构建产物目录
-DIST_DIR = Path(settings.BASE_DIR) / 'frontend' / 'dist'
+DIST_DIR = Path(settings.BASE_DIR).parent / 'frontend' / 'dist'
 
 # 未构建前端时，前台指向 Vite 开发服务器
 DEV_SERVER_URL = 'http://127.0.0.1:5173/'

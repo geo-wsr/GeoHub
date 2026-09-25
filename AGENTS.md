@@ -27,28 +27,43 @@
 ## 2. 目录结构
 
 ```
-mywebsite/
-├── manage.py
-├── requirements.txt          # 后端依赖（已固定版本）
-├── db.sqlite3                # 开发数据库（已 gitignore）
-├── .venv/                    # Python 虚拟环境（已 gitignore）
-├── mywebsite/                # Django 项目配置
-│   ├── settings.py           # INSTALLED_APPS / 中文与时区 / 静态文件
-│   ├── urls.py               # 路由总入口：admin → api → SPA catch-all
-│   ├── asgi.py / wsgi.py
-├── web/                      # 唯一的业务应用
-│   ├── models.py             # Category / Tag / Material / Comment / Favorite / DownloadRecord
-│   ├── admin.py              # 上述六个模型的后台注册
-│   ├── serializers.py        # DRF 序列化器（上传校验、标签 get_or_create、两级评论）
-│   ├── api.py                # 视图：资料、评论、收藏、下载、个人中心、认证
-│   ├── api_urls.py           # /api/ 路由（DefaultRouter + 认证函数视图）
-│   ├── pagination.py         # 统一分页（默认 12 条，上限 48）
-│   ├── views.py              # spa_index：返回构建产物或跳转 Vite
-│   ├── management/commands/seed_data.py   # 分类与示例资料初始化
-│   └── migrations/
-└── frontend/                 # Vue 前端工程
+mywebsite/                        # 单仓库：frontend/ + backend/ 前后端分离部署
+├── .github/workflows/            # GitHub Actions
+│   ├── deploy-pages.yml          # 前端 → GitHub Pages
+│   └── deploy-backend.yml        # 后端 → SSH 部署到云服务器
+├── .gitattributes / .gitignore
+├── .venv/                        # Python 虚拟环境（已 gitignore，位于仓库根）
+├── deploy/                       # 服务器样例：systemd unit、Nginx 反向代理
+├── docs/github-integration.md    # Pages/域名/Secrets/服务器准备/OAuth 操作步骤
+├── AGENTS.md
+├── backend/                      # Django 后端（独立部署到云服务器）
+│   ├── manage.py
+│   ├── requirements.txt          # 运行依赖（固定版本）
+│   ├── requirements-prod.txt     # 生产额外依赖（gunicorn）
+│   ├── .env.example              # 环境变量模板（真实 .env 已 gitignore）
+│   ├── db.sqlite3                # 开发数据库（已 gitignore）
+│   ├── media/                    # 用户上传资料（已 gitignore）
+│   ├── mywebsite/                # Django 项目配置
+│   │   ├── settings.py           # 环境变量驱动 + CORS + allauth + 中文与时区
+│   │   ├── urls.py               # admin → api → accounts(allauth) → SPA catch-all
+│   │   └── asgi.py / wsgi.py
+│   └── web/                      # 唯一的业务应用
+│       ├── models.py             # Category/Tag/Material/Comment/Favorite/DownloadRecord/
+│       │                         # ForumBoard/Topic/Post/ReviewLog/Notification
+│       ├── admin.py              # 模型后台注册
+│       ├── serializers.py        # DRF 序列化器（上传校验、标签、两级评论与楼层）
+│       ├── api.py                # 视图：资料、评论、收藏、下载、论坛、审核、通知、认证
+│       ├── api_urls.py           # /api/ 路由
+│       ├── adapters.py           # GitHub 登录适配器（只授予普通用户权限）
+│       ├── pagination.py         # 统一分页（默认 12 条，上限 48）
+│       ├── throttles.py          # 限流三档（兜底 / 登录注册 / 上传）
+│       ├── views.py              # spa_index：返回构建产物或跳转 Vite
+│       ├── management/commands/seed_data.py
+│       └── migrations/
+└── frontend/                     # Vue 前端工程（构建产物发布到 GitHub Pages）
     ├── package.json / package-lock.json
-    ├── vite.config.js        # 代理、别名、构建 base
+    ├── vite.config.js        # 代理、别名、base(VITE_BASE_PATH) + 404 回退插件
+    ├── .env.example          # VITE_API_BASE_URL / VITE_BASE_PATH 模板
     ├── index.html / public/favicon.svg
     ├── dist/                 # 构建产物（已 gitignore，由 npm run build 生成）
     └── src/
@@ -62,7 +77,8 @@ mywebsite/
         ├── components/             # AppHeader / MaterialCard / TopicCard / FloorItem /
         │                           # CommentSection / StatusPill / PaginationBar / …
         └── views/                  # Home / MaterialList / MaterialDetail / Upload / Profile / Login
-                                    # ForumList / TopicDetail / NewTopic / Search / Review / NotFound
+                                    # ForumList / TopicDetail / NewTopic / Search / Review
+                                    # OAuthCallback / NotFound
 ```
 
 ## 3. 环境约束（重要）
@@ -96,8 +112,8 @@ mywebsite/
 后端（**需提权**，或在你自己的系统终端执行）：
 
 ```powershell
-cd D:\mywebsite
-.\.venv\Scripts\Activate.ps1          # 或直接用 .\.venv\Scripts\python.exe
+cd D:\mywebsite\backend               # 后端代码在 backend/（虚拟环境仍在仓库根）
+..\.venv\Scripts\Activate.ps1         # 或直接用 ..\.venv\Scripts\python.exe
 python manage.py runserver            # 监听 127.0.0.1:8000
 python manage.py check
 python manage.py makemigrations       # 改过 models.py 之后
@@ -161,7 +177,9 @@ Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
 | `GET\|POST topics/{id}/posts/` | 楼层回复（一级按时间正序、含二级 replies、分页）；POST 需登录 |
 | `PATCH\|DELETE posts/{id}/` | 编辑 / 删除；仅作者或 staff，编辑会打 `edited_at` |
 | `POST topics/{id}/pin/`、`feature/` | **仅管理员**：置顶 / 加精开关（置顶帖在列表最前） |
-| `POST auth/csrf\|login\|logout\|register/`、`GET auth/me/` | 会话认证；`auth/csrf/` 用于拿 csrftoken |
+| `POST auth/csrf\|login\|logout\|register/`、`GET auth/me/` | 会话认证；`auth/csrf/` 同时返回 csrftoken（跨域时前端读不到 Cookie） |
+| `GET auth/providers/` | 第三方登录可用性与入口地址（GitHub） |
+| `/accounts/github/login/`（后端页面） | allauth 的 GitHub OAuth 入口与回调，成功后 302 回 `<FRONTEND_URL>/oauth/callback` |
 | `GET search/?q=` | 全局搜索，同时返回 `materials` 与 `topics` |
 | `GET profile/`、`favorites/`、`my-comments/`、`downloads/`、`my-topics/`、`my-posts/` | 个人中心（需登录） |
 | `GET notifications/`、`unread_count/`、`POST mark_all_read/`、`POST {id}/mark_read/` | 站内通知（需登录） |
@@ -277,7 +295,7 @@ print([hex(ord(c)) for c in value])
 - 鉴权只有 Session 认证（未接 Token/JWT）；限流用 LocMemCache，多进程部署需换 Redis
 - 没有生产配置：`DEBUG=True`、`SECRET_KEY` 是自动生成的不安全值、`ALLOWED_HOSTS` 为空、
   未接入 WhiteNoise/Nginx，媒体文件（`/media/`）在 `DEBUG=False` 下不会被 Django 托管
-- 未配置 git 远端与 CI（本地 `main` 分支，无自动构建/部署）
+- 未配置 git 远端（工作流已就绪，推送后即生效）；未接 CI 自动化测试（仅本地 `manage.py test`）
 
 ## 10. 安全红线
 
@@ -285,3 +303,22 @@ print([hex(ord(c)) for c in value])
 - 上线前必须：`DEBUG=False`、`SECRET_KEY` 走环境变量、设置 `ALLOWED_HOSTS`、
   执行 `collectstatic`、把 `runserver` 换成正式服务器（gunicorn/waitress + Nginx）。
 - 生产环境不要用 `python manage.py runserver`。
+
+## 11. GitHub 集成（部署契约）
+
+完整操作步骤见 `docs/github-integration.md`。改部署相关配置时先读它，避免踩下面这些点：
+
+- 前端由 `.github/workflows/deploy-pages.yml` 构建并发布到 GitHub Pages；
+  后端由 `.github/workflows/deploy-backend.yml` 通过 SSH 部署（拉代码 → 装依赖 → 迁移 → 重启服务）
+- 前端接口地址来自 `VITE_API_BASE_URL`：CI 注入仓库变量 `API_BASE_URL`，本地留空则走 Vite 代理
+- 构建 base 由 `VITE_BASE_PATH` 决定：Pages 仓库子路径 `/<仓库名>/`、自定义域名 `/`、交给 Django 时 `/static/`；
+  **它同时决定资源前缀与 Vue Router 的 history base**（`createWebHistory(import.meta.env.BASE_URL)`）
+- GitHub Pages 没有服务端重写规则，构建时由 `vite.config.js` 的 `spaFallback` 插件生成 `404.html`，
+  否则子路由刷新会 404
+- 后端配置全部走环境变量（见 `backend/.env.example`）：`DJANGO_SECRET_KEY`、`DJANGO_DEBUG`、
+  `DJANGO_ALLOWED_HOSTS`、`FRONTEND_URL`、`CORS_ALLOWED_ORIGINS`、`CSRF_TRUSTED_ORIGINS`、
+  `GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`；代码里不得出现任何密钥
+- 跨域要点：非 DEBUG 时 Session/CSRF Cookie 自动切 `SameSite=None; Secure`；
+  前端跨域读不到后端 Cookie，CSRF token 由 `/api/auth/csrf/` 响应体下发并缓存在内存，
+  登录/登出后 Django 轮换 token，必须重新调用 `ensureCsrf()`
+- GitHub 登录用户一律是普通用户（`web/adapters.py` 强制 `is_staff=False`），与三级权限体系兼容

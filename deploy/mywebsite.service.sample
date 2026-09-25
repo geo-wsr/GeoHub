@@ -1,0 +1,32 @@
+# ==========================================================================
+# systemd 服务样例：部署到 /etc/systemd/system/mywebsite.service
+#   1. 按实际路径修改 WorkingDirectory / ExecStart / User
+#   2. sudo systemctl daemon-reload
+#   3. sudo systemctl enable --now mywebsite
+# 说明：后端在仓库的 backend/ 目录，虚拟环境在仓库根下的 .venv
+# ==========================================================================
+[Unit]
+Description=mywebsite Django backend (gunicorn)
+After=network.target
+
+[Service]
+Type=notify
+User=deploy
+Group=www-data
+WorkingDirectory=/srv/mywebsite/backend
+
+# 生产环境变量：密钥、域名、OAuth 凭据都放这里，不要写进代码
+# 也可以用 EnvironmentFile=/etc/mywebsite.env 集中管理
+EnvironmentFile=/etc/mywebsite.env
+ExecStart=/srv/mywebsite/.venv/bin/gunicorn mywebsite.wsgi:application \
+    --bind 127.0.0.1:8000 \
+    --workers 3 \
+    --timeout 60 \
+    --access-logfile - \
+    --error-logfile -
+
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
