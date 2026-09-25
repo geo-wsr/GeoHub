@@ -26,7 +26,35 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # 未配置部署 Secrets 时直接跳过，避免首次推送就出现失败的红叉
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Check required secrets
+        id: check
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
+        run: |
+          set -euo pipefail
+          missing=""
+          for name in SSH_HOST DEPLOY_PATH SERVICE_NAME; do
+            eval "value=\$$name"
+            [ -n "$value" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::未配置部署 Secrets（缺少:$missing），本次跳过后端部署。配置方法见 docs/github-integration.md"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
   deploy:
+    needs: preflight
+    if: needs.preflight.outputs.ready == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
