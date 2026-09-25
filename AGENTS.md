@@ -279,9 +279,13 @@ Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
 
 ```powershell
 .\.venv\Scripts\python.exe manage.py check
-.\.venv\Scripts\python.exe manage.py test web     # 28 个接口测试；改权限/审核后必跑
-Invoke-WebRequest http://127.0.0.1:8000/api/site-info/ -UseBasicParsing
+.\.venv\Scripts\python.exe manage.py test web     # 37 个接口测试；改权限/审核后必跑
+Invoke-WebRequest http://127.0.0.1:8000/api/categories/ -UseBasicParsing
 ```
+
+> 注意 `/api/site-info/` **并不存在**（旧文档遗留）。不存在的 `/api/*` 路径会落到 SPA catch-all：
+> 本地有 `frontend/dist` 时返回同一份 HTML，线上（仓库里没有 dist）则 302 到
+> `http://127.0.0.1:5173/` —— 看到 302 而不是 404 就说明是这个兜底，不是接口坏了。
 
 改为前端相关时，除了构建，还应确认：`/` 返回的 HTML 含 `id="app"`、静态资源 200、
 `/about` 与首页返回同一份 HTML（证明前端路由接管）。
