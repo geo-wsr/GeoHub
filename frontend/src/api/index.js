@@ -12,11 +12,30 @@ export const ADMIN_URL = `${API_BASE_URL}/admin/`
 
 const client = axios.create({
   baseURL: API_ROOT,
-  timeout: 30000,
+  // 免费实例（Render Free）休眠后首个请求要 30~60 秒才回来，超时给宽一点
+  timeout: 60000,
   // 跨域部署必须带上 Cookie（Session 认证）
   withCredentials: true,
   headers: { Accept: 'application/json' },
 })
+
+// —— 冷启动友好 ——
+// Render 免费实例闲置 15 分钟会休眠：首次请求要么直接连接失败，要么超出超时。
+// GET 是幂等的，静默重试两次再判定"离线"，能挡掉绝大多数冷启动误报。
+const RETRY_LIMIT = 2
+const RETRY_DELAY = 2500
+
+/**
+ * 预热：用最轻的 GET 把可能已休眠的实例唤醒。
+ * 写请求（尤其是上传）不该白等冷启动，调用前先走一遍这个。
+ */
+export async function ensureAwake() {
+  try {
+    await client.get('/categories/')
+  } catch {
+    // 唤醒失败不阻塞业务请求，让真正的错误在业务调用处抛出
+  }
+}
 
 // CSRF token 缓存：跨域时前端读不到后端的 csrftoken Cookie，只能用响应体里的值
 let csrfToken = null
@@ -40,14 +59,26 @@ client.interceptors.request.use((config) => {
 })
 
 // 网络层失败（后端没启动、断网、超时）统一标记为"离线"，供全局横幅提示；
-// 注意 4xx/5xx 属于"后端可达"，不在此列。
+// 注意 4xx/5xx 属于"后端可达"，不在此列。冷启动属于网络层失败，先重试再判定。
 client.interceptors.response.use(
   (response) => {
     if (connectionState.offline) markOnline()
     return response
   },
-  (error) => {
-    if (!error.response) markOffline()
+  async (error) => {
+    const config = error.config || {}
+    const networkError = !error.response
+    const method = (config.method || 'get').toLowerCase()
+    const attempt = config.__retryCount || 0
+
+    // 冷启动：幂等的 GET 自动重试（间隔 2.5s / 5s），重试期间不显示离线横幅
+    if (networkError && method === 'get' && attempt < RETRY_LIMIT) {
+      config.__retryCount = attempt + 1
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY * (attempt + 1)))
+      return client.request(config)
+    }
+
+    if (networkError) markOffline()
     return Promise.reject(error)
   },
 )
@@ -86,20 +117,25 @@ export const api = {
   latestMaterials: () => client.get('/materials/latest/').then((r) => r.data),
   hotMaterials: () => client.get('/materials/hot/').then((r) => r.data),
   relatedMaterials: (id) => client.get(`/materials/${id}/related/`).then((r) => r.data),
-  createMaterial: (formData, onUploadProgress) =>
-    client
-      .post('/materials/', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress,
-      })
-      .then((r) => r.data),
-  updateMaterial: (id, formData, onUploadProgress) =>
-    client
-      .patch(`/materials/${id}/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress,
-      })
-      .then((r) => r.data),
+  // 上传体积大、耗时长，先唤醒实例再提交，避免请求卡在冷启动上
+  createMaterial: async (formData, onUploadProgress) => {
+    await ensureAwake()
+    const r = await client.post('/materials/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress,
+      timeout: 180000,
+    })
+    return r.data
+  },
+  updateMaterial: async (id, formData, onUploadProgress) => {
+    await ensureAwake()
+    const r = await client.patch(`/materials/${id}/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress,
+      timeout: 180000,
+    })
+    return r.data
+  },
   deleteMaterial: (id) => client.delete(`/materials/${id}/`),
   toggleFavorite: (id) => client.post(`/materials/${id}/favorite/`).then((r) => r.data),
 
@@ -149,15 +185,16 @@ export const api = {
   updatePost: (id, payload) => client.patch(`/posts/${id}/`, payload).then((r) => r.data),
 
   // 论坛附件/图片：上传后返回绝对 URL，由编辑器插入 Markdown 正文
-  uploadAttachment: (file, onUploadProgress) => {
+  uploadAttachment: async (file, onUploadProgress) => {
     const form = new FormData()
     form.append('file', file)
-    return client
-      .post('/attachments/', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress,
-      })
-      .then((r) => r.data)
+    await ensureAwake()
+    const r = await client.post('/attachments/', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress,
+      timeout: 180000,
+    })
+    return r.data
   },
 
   // 帖子置顶 / 加精（仅管理员）

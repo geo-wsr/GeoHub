@@ -28,9 +28,9 @@ async function retry() {
       <div class="container conn__inner">
         <AppIcon name="alert" :size="16" />
         <span class="conn__text">
-          无法连接后端服务，页面数据可能显示不全。
+          暂时连不上后端服务，页面数据可能显示不全。
           <span class="conn__hint">
-            请确认后端已启动；接口地址：<code>{{ API_ROOT }}</code>
+            免费实例休眠后唤醒需要 30~60 秒，稍等片刻再点「重试」；接口地址：<code>{{ API_ROOT }}</code>
           </span>
         </span>
         <button class="conn__btn" type="button" :disabled="retrying" @click="retry">
