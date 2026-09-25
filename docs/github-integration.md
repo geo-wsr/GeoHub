@@ -21,15 +21,26 @@ GitHub 仓库（单仓）
 
 | 组件 | 实例 | 地址 |
 | --- | --- | --- |
-| 前端 | GitHub Pages（仓库子路径部署） | <https://geo-wsr.github.io/GeoHub/> |
+| 前端 | GitHub Pages（**自定义域名**，base = `/`） | <https://www.bnugeohub.cn/> |
 | 后端 | Render Web Service `geohub-api`（Free / Oregon） | <https://api.bnugeohub.cn> |
 | 数据库 | Neon Postgres（项目 `ancient-band-34291622`） | 经 `DATABASE_URL` 注入 |
 | 文件 | Supabase Storage 桶 `geohub-media`（project-ref `bijdpcttmcakrvjnxugl`） | `…/storage/v1/object/public/geohub-media` |
 
 - Render 服务 ID `srv-dar9g3m0tbcc739hjeeg`，蓝图 ID `exs-dar9dnrncjis73ckohrg`；
   **免费实例没有 Web Shell / SSH**，一次性管理命令在本机连生产库执行（见 3.5）
-- 仓库已配置：Variable `API_BASE_URL=https://api.bnugeohub.cn`、Secret `RENDER_DEPLOY_HOOK`
-- DNS：DNSPod 里 `api` 的 CNAME → `geohub-api.onrender.com`，HTTPS 证书由 Render 自动签发
+- 仓库已配置：Variable `API_BASE_URL=https://api.bnugeohub.cn`、`PAGES_BASE_PATH=/`、Secret `RENDER_DEPLOY_HOOK`
+- Render 环境变量里的前端源已切到新域名：`FRONTEND_URL=https://www.bnugeohub.cn`、
+  `CORS_ALLOWED_ORIGINS` / `CSRF_TRUSTED_ORIGINS` = `https://www.bnugeohub.cn,https://geo-wsr.github.io`
+  （第二个是过渡期保留的旧 Pages 源，确认不再用之后可以删掉）
+- DNS（DNSPod）：`api` CNAME → `geohub-api.onrender.com`（Render 自动签证书）；
+  `www` CNAME → `geo-wsr.github.io`（GitHub Pages 自定义域名，已开 **Enforce HTTPS**，
+  `http://www.bnugeohub.cn` 会 301 到 https）
+- **改用自定义域名时必改两处**：仓库变量 `PAGES_BASE_PATH=/`（否则资源仍指向 `/GeoHub/`），
+  以及后端 `CORS_ALLOWED_ORIGINS` / `CSRF_TRUSTED_ORIGINS`（否则登录、发帖、上传全部 403）
+- 顺带好处：前后端同在 `bnugeohub.cn` 下（`www` 与 `api` 是同一站点），
+  Safari 的第三方 Cookie 拦截问题自动消失
+- 根域名（`bnugeohub.cn`）目前没有解析；想让它也跳过来，可在 DNSPod 加一条
+  「显性 URL 转发」指向 `https://www.bnugeohub.cn/`
 - 管理后台：<https://api.bnugeohub.cn/admin/>（超级管理员 `quanhezi`，密码由维护者保管）
 - 本地开发不受影响：`frontend/dist` 不提交，本地构建不带 `VITE_API_BASE_URL`，仍然走同源 `/api`
 
