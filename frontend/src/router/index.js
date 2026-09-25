@@ -2,9 +2,14 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import { loadCurrentUser } from '@/stores/auth'
 
+// 前端路由前缀 ≠ 资源前缀，两者用途不同：
+//   1. GitHub Pages：两者相同，都是 /<仓库名>/（CI 会同时注入 VITE_BASE_PATH 与 VITE_ROUTER_BASE）
+//   2. 交给 Django：资源在 /static/ 下（VITE_BASE_PATH），但页面由 catch-all 在站点根提供，
+//      路由前缀必须是 /；若这里误用 /static/，SPA 生成的链接会变成 /static/login 这类 404 地址
+const ROUTER_BASE = import.meta.env.VITE_ROUTER_BASE || '/'
+
 const router = createRouter({
-  // base 必须与构建时的 base 一致，否则 GitHub Pages 子路径部署下路由会错位
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(ROUTER_BASE),
   routes: [
     {
       path: '/',

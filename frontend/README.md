@@ -20,9 +20,11 @@ npm run preview  # 本地预览构建产物
 | --- | --- | --- |
 | `VITE_API_BASE_URL` | 后端接口地址 | 留空 → 走 Vite 代理（仅开发）；生产填 `https://api.example.com` |
 | `VITE_BASE_PATH` | 构建资源前缀 | 留空 → `/static/`（交给 Django）；Pages 仓库子路径 → `/<仓库名>/`；自定义域名 → `/` |
+| `VITE_ROUTER_BASE` | 前端路由前缀 | 留空 → `/`（交给 Django）；Pages 场景与 `VITE_BASE_PATH` 相同 |
 
-> `VITE_BASE_PATH` **同时决定资源前缀与 Vue Router 的 history base**
-> （`createWebHistory(import.meta.env.BASE_URL)`），两者必须一致，否则子路由会错位。
+> **资源前缀和路由前缀是两件事**：交给 Django 托管时，资源在 `/static/` 下，
+> 但页面由 Django 的 catch-all 在站点根提供，路由前缀必须是 `/`。
+> 若把路由前缀也设成 `/static/`，SPA 生成的链接会变成 `/static/login` 这类 404 地址。
 
 ## 构建时自动做的事
 

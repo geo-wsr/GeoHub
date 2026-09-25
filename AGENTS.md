@@ -311,8 +311,11 @@ print([hex(ord(c)) for c in value])
 - 前端由 `.github/workflows/deploy-pages.yml` 构建并发布到 GitHub Pages；
   后端由 `.github/workflows/deploy-backend.yml` 通过 SSH 部署（拉代码 → 装依赖 → 迁移 → 重启服务）
 - 前端接口地址来自 `VITE_API_BASE_URL`：CI 注入仓库变量 `API_BASE_URL`，本地留空则走 Vite 代理
-- 构建 base 由 `VITE_BASE_PATH` 决定：Pages 仓库子路径 `/<仓库名>/`、自定义域名 `/`、交给 Django 时 `/static/`；
-  **它同时决定资源前缀与 Vue Router 的 history base**（`createWebHistory(import.meta.env.BASE_URL)`）
+- **资源前缀与路由前缀是两个独立变量，别混用**：
+  - `VITE_BASE_PATH`：资源前缀。Pages 用 `/<仓库名>/` 或 `/`；交给 Django 时是 `/static/`
+  - `VITE_ROUTER_BASE`：Vue Router 的 history base。Pages 场景与上面相同；**交给 Django 时必须留空（`/`）**，
+    因为页面是 Django 的 catch-all 在站点根提供的。曾用 `import.meta.env.BASE_URL` 当路由 base，
+    导致本地 SPA 跳转全变成 `/static/login` 这类 404 地址（Django 的 catch-all 排除了 `static/` 前缀）
 - GitHub Pages 没有服务端重写规则，构建时由 `vite.config.js` 的 `spaFallback` 插件生成 `404.html`，
   否则子路由刷新会 404
 - 后端配置全部走环境变量（见 `backend/.env.example`）：`DJANGO_SECRET_KEY`、`DJANGO_DEBUG`、

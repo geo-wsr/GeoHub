@@ -137,7 +137,8 @@ sudo chmod 440 /etc/sudoers.d/mywebsite-deploy
 
 | 位置 | 配置 | 作用 |
 | --- | --- | --- |
-| `frontend/vite.config.js` | `VITE_BASE_PATH` | 资源前缀 + Router history base（子路径/自定义域名） |
+| `frontend/vite.config.js` | `VITE_BASE_PATH` | 构建资源前缀（Pages 子路径 / 自定义域名 / 交给 Django 时 `/static/`） |
+| `frontend/src/router/index.js` | `VITE_ROUTER_BASE` | 前端路由前缀。Pages 场景与 `VITE_BASE_PATH` 相同；交给 Django 时必须留空（`/`），否则 SPA 会生成 `/static/login` 这类 404 链接 |
 | `frontend/vite.config.js` | `spaFallback` 插件 | 构建后生成 `404.html`，子路由刷新不再 404 |
 | `frontend/src/api/index.js` | `VITE_API_BASE_URL` | 后端接口地址（开发留空走代理） |
 | `backend/mywebsite/settings.py` | `CORS_ALLOWED_ORIGINS` | 允许携带 Cookie 的前端源 |
