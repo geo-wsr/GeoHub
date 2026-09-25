@@ -6,7 +6,7 @@ from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Count, F, Q
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponseRedirect
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -522,11 +522,15 @@ class MaterialViewSet(FavoritedIdsContextMixin, viewsets.ModelViewSet):
 
         if not material.file:
             raise Http404('该资料没有可下载的文件。')
+
+        # 本地磁盘存储：直接流式返回；对象存储（R2/S3）：302 到文件地址，
+        # 避免把大文件的下载流量压在后端进程上（Serverless/PaaS 尤其重要）
         try:
             file_path = material.file.path
         except NotImplementedError:
-            file_path = None
-        if not file_path or not os.path.exists(file_path):
+            return HttpResponseRedirect(material.file.url)
+
+        if not os.path.exists(file_path):
             raise Http404('文件不存在或已被移除。')
 
         return FileResponse(

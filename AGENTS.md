@@ -17,26 +17,29 @@
 | 后台 | Django Admin + SimpleUI | 2026.1.13 |
 | 数据库 | SQLite（仅开发用，`db.sqlite3`） | — |
 | 运行时 | Python / Node / npm | 3.13.15 / 24.13.0 / 11.6.2 |
+| 部署 | GitHub Pages（前端）+ Render（Django/gunicorn）+ Neon（Postgres）+ Cloudflare R2（文件） | — |
 
 - 语言与时区：`LANGUAGE_CODE = 'zh-hans'`、`TIME_ZONE = 'Asia/Shanghai'`
 - 三级角色：游客（只读）/ 注册用户（下载、评论、发帖、提交上传）/ 管理员（审核、管理全站内容）
 - 前台三大入口：首页 / 资料库 / 论坛；细分分类与板块在页面侧边栏切换
-- 已是 git 仓库：分支 `main`，首个提交 `761034d`；**尚未配置远端**（纯本地）
+- 已是 git 仓库：分支 `main`，首个提交 `761034d`，远端 `https://github.com/geo-wsr/GeoHub.git`
+- 生产环境是「境外 Serverless」，**不需要 ICP 备案**；只要换成境内服务器/境内 CDN 就必须备案
 - 所有源码使用 UTF-8，注释与界面文案为中文
 
 ## 2. 目录结构
 
 ```
 mywebsite/                        # 单仓库：frontend/ + backend/ 前后端分离部署
+├── render.yaml                   # Render 蓝图：云端一键建后端服务（Neon/R2 密钥在控制台填）
 ├── .github/workflows/            # GitHub Actions
 │   ├── deploy-pages.yml          # 前端 → GitHub Pages
-│   └── deploy-backend.yml        # 后端 → SSH 部署到云服务器
+│   └── deploy-backend.yml        # 后端 → POST Render 部署钩子（不再走 SSH）
 ├── .gitattributes / .gitignore
 ├── .venv/                        # Python 虚拟环境（已 gitignore，位于仓库根）
-├── deploy/                       # 服务器样例：systemd unit、Nginx 反向代理
-├── docs/github-integration.md    # Pages/域名/Secrets/服务器准备/OAuth 操作步骤
+├── deploy/                       # 回退方案样例：systemd unit、Nginx 反向代理
+├── docs/github-integration.md    # Pages/域名/Secrets/Render/Neon/R2/OAuth 操作步骤
 ├── AGENTS.md
-├── backend/                      # Django 后端（独立部署到云服务器）
+├── backend/                      # Django 后端（独立部署到 Render）
 │   ├── manage.py
 │   ├── requirements.txt          # 运行依赖（固定版本）
 │   ├── requirements-prod.txt     # 生产额外依赖（gunicorn）
@@ -253,6 +256,22 @@ Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
     自定义该正则后，`target="_blank"` 里的 `_blank` 不像 URI，整条属性会被悄悄删掉
     （表现为外链不再新窗口打开、`rel="noopener"` 丢失）。解决办法是把这类属性加进
     `ADD_URI_SAFE_ATTR`，见 `frontend/src/utils/markdown.js`。
+12. **用 Postgres 必须装 `psycopg`，而且只有"部署时"才会暴露。**
+    本地默认走 SQLite，缺 `psycopg` 时 `manage.py check` 与全部测试都是绿的；
+    一旦设了 `DATABASE_URL`（Render/Neon），Django 启动就抛
+    `ImproperlyConfigured: Error loading psycopg2 or psycopg module`，服务直接 502。
+    `psycopg[binary]==3.3.6` 已固定在 `requirements.txt`，不要删。
+13. **`DEBUG=False` 后 Django 不再托管 `/static/` 与 `/media/`。**
+    静态文件交给 WhiteNoise（中间件必须紧跟 `SecurityMiddleware`，
+    storage 用 `whitenoise.storage.CompressedStaticFilesStorage`，部署命令里要跑
+    `collectstatic`）；用户上传的文件交给对象存储（配 `AWS_STORAGE_BUCKET_NAME` 等）。
+    没配对象存储时上传会写进容器临时磁盘，实例重启即丢失。
+    自测方法：设 `DJANGO_DEBUG=False` 后请求 `/static/admin/css/base.css`，
+    看到 `Cache-Control: public, max-age=60` 与 `Vary: Accept-Encoding` 就说明是 WhiteNoise 在服务
+    （`runserver` 只在 `DEBUG=True` 时接管 `/static/`，所以能观察到这些头即证明配置生效）。
+14. **对象存储下 `material.file.path` 会抛 `NotImplementedError`。**
+    `download` action 已捕获它并 302 到 `material.file.url`（省后端带宽、避开 Render 的响应限制）；
+    改动下载逻辑时别把这条分支删掉，否则 R2 一旦启用下载就 500。
 
 ## 8. 验证方式
 
@@ -306,6 +325,9 @@ print([hex(ord(c)) for c in value])
   自动把 `![名](url)` / `[名](url)` 插入光标处；图片 ≤5MB、其他附件 ≤20MB，
   故意不允许 `.svg`（可内嵌脚本）；上传后返回绝对 URL，跨域部署也不会指错站点
 - 演示数据：5 个分类 + 6 个板块 + 3 份示例资料 + 2 个示例帖子，可用 `seed_data --clear-demo` 清除
+- **Serverless 部署链路（方案 2，免 ICP 备案）**：根目录 `render.yaml` 蓝图（Render 免费实例 +
+  gunicorn + 启动时自动迁移）、`DATABASE_URL` 连 Neon Postgres、`AWS_*` 一组变量切到 Cloudflare R2、
+  WhiteNoise 托管 `/static/`；`.github/workflows/deploy-backend.yml` 已改为触发 Render 部署钩子
 - 超级管理员已创建（用户名 `quanhezi`；**密码不记录在本文件**，需要时问维护者）
 
 尚未做，接到相关需求时按需补齐：
@@ -314,23 +336,31 @@ print([hex(ord(c)) for c in value])
 - 无 @ 提醒、无邮件/短信通知（仅站内通知）；收藏不可分组
 - 板块无独立版主（管理动作靠全局 staff）；帖子不能移动板块、不能关闭回复
 - 鉴权只有 Session 认证（未接 Token/JWT）；限流用 LocMemCache，多进程部署需换 Redis
-- 没有生产配置：`DEBUG=True`、`SECRET_KEY` 是自动生成的不安全值、`ALLOWED_HOSTS` 为空、
-  未接入 WhiteNoise/Nginx，媒体文件（`/media/`）在 `DEBUG=False` 下不会被 Django 托管
-- 未配置 git 远端（工作流已就绪，推送后即生效）；未接 CI 自动化测试（仅本地 `manage.py test`）
+- 生产化落点是「环境变量驱动 + Render 蓝图」，但**本地默认仍是** `DEBUG=True` / SQLite /
+  本地 `media/`；Render / Neon / R2 需要在控制台按 `docs/github-integration.md` 建好后端才可用
+- 前后端跨站（`*.github.io` ↔ `api.<域名>`）时 Safari 的第三方 Cookie 拦截未处理；
+  上传仍是「经后端中转」，未做前端直传对象存储（预签名 URL）
+- 未接 CI 自动化测试（仅本地 `manage.py test web`）
 
 ## 10. 安全红线
 
 - 不要把 `SECRET_KEY`、管理员密码、API Key 写进源码或本文件。
 - 上线前必须：`DEBUG=False`、`SECRET_KEY` 走环境变量、设置 `ALLOWED_HOSTS`、
-  执行 `collectstatic`、把 `runserver` 换成正式服务器（gunicorn/waitress + Nginx）。
+  执行 `collectstatic`、把 `runserver` 换成正式服务器（Render 上用 gunicorn）。
+- 云上所有密钥都放在 **Render 环境变量**或 **GitHub Secrets/Variables** 里
+  （`render.yaml` 只写键名，值一律 `sync: false`），仓库里不得出现真实值。
 - 生产环境不要用 `python manage.py runserver`。
 
 ## 11. GitHub 集成（部署契约）
 
 完整操作步骤见 `docs/github-integration.md`。改部署相关配置时先读它，避免踩下面这些点：
 
-- 前端由 `.github/workflows/deploy-pages.yml` 构建并发布到 GitHub Pages；
-  后端由 `.github/workflows/deploy-backend.yml` 通过 SSH 部署（拉代码 → 装依赖 → 迁移 → 重启服务）
+- 前端由 `.github/workflows/deploy-pages.yml` 构建并发布到 GitHub Pages（纯静态，无后端逻辑）；
+  后端由 `.github/workflows/deploy-backend.yml` POST 一发 **Render Deploy Hook**，
+  真正的「装依赖 → collectstatic → migrate → gunicorn」由 `render.yaml` 在 Render 侧执行。
+  兼容旧自建服务器需改回 SSH 方案时，参考 `deploy/` 里的 systemd / Nginx 样例（境内要备案）
+- 托管选型（免备案）：Render 跑 Django、Neon 提供 Postgres（`DATABASE_URL`）、
+  Cloudflare R2 存上传文件（`AWS_*`）；只配 `DATABASE_URL` 不配 R2，上传会落在容器临时磁盘里丢失
 - 前端接口地址来自 `VITE_API_BASE_URL`：CI 注入仓库变量 `API_BASE_URL`，本地留空则走 Vite 代理
 - **资源前缀与路由前缀是两个独立变量，别混用**：
   - `VITE_BASE_PATH`：资源前缀。Pages 用 `/<仓库名>/` 或 `/`；交给 Django 时是 `/static/`
@@ -341,7 +371,10 @@ print([hex(ord(c)) for c in value])
   否则子路由刷新会 404
 - 后端配置全部走环境变量（见 `backend/.env.example`）：`DJANGO_SECRET_KEY`、`DJANGO_DEBUG`、
   `DJANGO_ALLOWED_HOSTS`、`FRONTEND_URL`、`CORS_ALLOWED_ORIGINS`、`CSRF_TRUSTED_ORIGINS`、
-  `GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`；代码里不得出现任何密钥
+  `GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`、`DATABASE_URL`、`AWS_STORAGE_BUCKET_NAME`、
+  `AWS_ACCESS_KEY_ID`、`AWS_SECRET_ACCESS_KEY`、`AWS_S3_ENDPOINT_URL`、`AWS_S3_REGION_NAME`、
+  `AWS_S3_CUSTOM_DOMAIN`、`AWS_QUERYSTRING_AUTH`；代码里不得出现任何密钥。
+  `RENDER_EXTERNAL_HOSTNAME` 由 Render 自动注入，settings 会把它追加进 `ALLOWED_HOSTS`
 - 跨域要点：非 DEBUG 时 Session/CSRF Cookie 自动切 `SameSite=None; Secure`；
   前端跨域读不到后端 Cookie，CSRF token 由 `/api/auth/csrf/` 响应体下发并缓存在内存，
   登录/登出后 Django 轮换 token，必须重新调用 `ensureCsrf()`

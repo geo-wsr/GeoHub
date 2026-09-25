@@ -1,0 +1,49 @@
+# ==========================================================================
+# Render 蓝图：在 Render 控制台 New → Blueprint，指向本仓库即可一键创建后端服务
+#   - 数据库与对象存储需要你另行准备（Neon / Cloudflare R2），
+#     在控制台把连接串与密钥填进下面标了 sync: false 的环境变量
+#   - 免费实例 15 分钟无请求会休眠，下次请求冷启动约 30-60 秒
+# ==========================================================================
+services:
+  - type: web
+    name: geohub-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    # requirements-prod.txt = requirements.txt + gunicorn
+    buildCommand: pip install -r requirements-prod.txt && python manage.py collectstatic --noinput
+    startCommand: python manage.py migrate --noinput && gunicorn mywebsite.wsgi:application
+    healthCheckPath: /api/categories/
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.15
+      - key: DJANGO_DEBUG
+        value: 'false'
+      # Render 会自动生成一个高强度密钥
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      # 下面这些在 Render 控制台里填（sync: false = 不从仓库同步，需手动设置）
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: AWS_STORAGE_BUCKET_NAME
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_S3_ENDPOINT_URL
+        sync: false
+      - key: AWS_S3_CUSTOM_DOMAIN
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false

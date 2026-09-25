@@ -14,3 +14,18 @@ certifi==2026.7.22
 charset-normalizer==3.5.1
 idna==3.20
 urllib3==2.8.0
+# —— 云部署（Serverless / PaaS）新增 ——
+# 数据库：用 DATABASE_URL 连托管 Postgres（本地仍回落到 SQLite）
+dj-database-url==3.1.2
+# Postgres 驱动（Django 连 Postgres 必需，缺了会在部署启动时直接报错）
+psycopg[binary]==3.3.6
+# 对象存储：Cloudflare R2 / S3 兼容后端（PaaS 本地磁盘是临时的）
+django-storages==1.14.6
+boto3==1.43.102
+botocore==1.43.102
+s3transfer==0.19.2
+jmespath==1.1.0
+python-dateutil==2.9.0.post0
+six==1.17.0
+# 静态文件：生产环境由 WhiteNoise 托管（后台/SimpleUI 样式）
+whitenoise==6.12.0

@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 
 # --------------------------------------------------------------------------
@@ -77,6 +78,10 @@ if not SECRET_KEY:
 # 逗号分隔，例如：api.example.com,127.0.0.1,localhost
 ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost')
 
+# Render 会自动注入外部域名，加进白名单省得手填
+if env('RENDER_EXTERNAL_HOSTNAME'):
+    ALLOWED_HOSTS.append(env('RENDER_EXTERNAL_HOSTNAME'))
+
 
 # Application definition
 
@@ -103,6 +108,8 @@ SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # WhiteNoise 紧随 SecurityMiddleware：生产环境由它托管 /static/ 静态资源
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     # CorsMiddleware 必须尽量靠前（在 CommonMiddleware 之前）
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -139,10 +146,14 @@ WSGI_APPLICATION = 'mywebsite.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    # 优先用 DATABASE_URL（托管 Postgres，如 Neon / Supabase / Render PG），
+    # 未配置时回落到本地 SQLite —— 本地开发零配置，部署只改环境变量。
+    # 注意：PaaS / Serverless 上不能用 SQLite，实例文件系统是临时的。
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 
 
@@ -182,15 +193,44 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# 静态文件：生产环境（DEBUG=False）由 WhiteNoise 直接托管压缩后的静态资源，
+# 后台 / SimpleUI 的样式因此不需要额外依赖 Nginx
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
+}
+
 # 前端（Vue / Vite）构建产物，参与 Django 的静态文件查找
 STATICFILES_DIRS = [BASE_DIR.parent / 'frontend' / 'dist']  # 前端在仓库根下的 frontend/
 
 # python manage.py collectstatic 的输出目录（部署时使用）
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# 用户上传的学习资料（开发环境由 Django 直接托管，部署交给 Nginx/对象存储）
-MEDIA_URL = 'media/'
+# 用户上传的学习资料（开发环境走本地磁盘；配置了对象存储后自动切换）
+MEDIA_URL = env('MEDIA_URL', 'media/')
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# —— 对象存储（Cloudflare R2 / 任意 S3 兼容服务）——
+# 只要设置了 AWS_STORAGE_BUCKET_NAME，上传文件就改走对象存储；
+# PaaS / Serverless 的本地磁盘是临时的，必须用它。
+AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
+if AWS_STORAGE_BUCKET_NAME:
+    STORAGES['default'] = {'BACKEND': 'storages.backends.s3.S3Storage'}
+    AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
+    # R2 形如 https://<account_id>.r2.cloudflarestorage.com
+    AWS_S3_ENDPOINT_URL = env('AWS_S3_ENDPOINT_URL')
+    AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME', 'auto')
+    # 桶的公开访问域名（R2 控制台开启公开访问后得到，如 pub-xxxx.r2.dev）
+    AWS_S3_CUSTOM_DOMAIN = env('AWS_S3_CUSTOM_DOMAIN')
+    AWS_S3_URL_PROTOCOL = 'https:'
+    AWS_S3_FILE_OVERWRITE = False
+    # 公开桶：不生成签名临时 URL，file.url 直接是公开地址（论坛图片要能直接显示）
+    AWS_QUERYSTRING_AUTH = env_bool('AWS_QUERYSTRING_AUTH', False)
+    # R2 不支持对象级 ACL，必须保持 None
+    AWS_DEFAULT_ACL = None
+    if AWS_S3_CUSTOM_DOMAIN:
+        MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
 
 # 资料上传规则：前后端共用同一套约束
 MATERIAL_ALLOWED_EXTENSIONS = [

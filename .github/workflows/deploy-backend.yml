@@ -1,23 +1,19 @@
 # ==========================================================================
-# 后端部署：SSH 连接云服务器，拉代码 → 装依赖 → 迁移 → 重启服务
-#   触发条件：backend/ 变更推送到 main，或手动触发
-#   需要的 Secrets（Settings → Secrets and variables → Actions → Secrets）：
-#     SSH_HOST           服务器地址（IP 或域名）
-#     SSH_USER           登录用户，例如 deploy
-#     SSH_PRIVATE_KEY    部署专用私钥内容（整段，含 BEGIN/END）
-#     SSH_PORT           可选，默认 22
-#     DEPLOY_PATH        服务器上的仓库路径，例如 /srv/mywebsite
-#     SERVICE_NAME       systemd 服务名，例如 mywebsite
-#   服务器一次性准备步骤见 docs/github-integration.md
+# 后端部署：触发 Render 部署（Serverless / PaaS 方案，不需要自建服务器）
+#   触发条件：backend/** 或 render.yaml 变更推送到 main，或手动触发
+#   需要的 Secret：RENDER_DEPLOY_HOOK
+#     Render 控制台 → 你的 Web Service → Settings → Deploy Hook，复制整条 URL
+#   建议同时在 Render 里关闭 Auto-Deploy，否则一次推送会触发两次部署
+#   未配置该 Secret 时安全跳过（不会出现失败的红叉）
 # ==========================================================================
-name: Deploy backend to server
+name: Deploy backend to Render
 
 on:
   push:
     branches: [main]
     paths:
       - 'backend/**'
-      - 'deploy/**'
+      - 'render.yaml'
       - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
 
@@ -26,28 +22,20 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # 未配置部署 Secrets 时直接跳过，避免首次推送就出现失败的红叉
   preflight:
     runs-on: ubuntu-latest
     outputs:
       ready: ${{ steps.check.outputs.ready }}
     steps:
-      - name: Check required secrets
+      - name: Check deploy hook secret
         id: check
         env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
           set -euo pipefail
-          missing=""
-          for name in SSH_HOST DEPLOY_PATH SERVICE_NAME; do
-            eval "value=\$$name"
-            [ -n "$value" ] || missing="$missing $name"
-          done
-          if [ -n "$missing" ]; then
+          if [ -z "${RENDER_DEPLOY_HOOK}" ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::未配置部署 Secrets（缺少:$missing），本次跳过后端部署。配置方法见 docs/github-integration.md"
+            echo "::notice::未配置 RENDER_DEPLOY_HOOK，本次跳过后端部署。配置方法见 docs/github-integration.md"
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
@@ -57,85 +45,17 @@ jobs:
     if: needs.preflight.outputs.ready == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Prepare SSH key
+      - name: Trigger Render deploy
         env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
           set -euo pipefail
-          mkdir -p ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          # 固定主机指纹，避免中间人风险；失败时给出可读提示
-          if ! ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null; then
-            echo "::error::无法获取 $SSH_HOST 的 SSH 指纹，请确认服务器可达与端口开放"
+          echo "触发 Render 部署…"
+          code=$(curl -sS -o /tmp/render_resp.txt -w '%{http_code}' -X POST "$RENDER_DEPLOY_HOOK")
+          cat /tmp/render_resp.txt || true
+          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
+            echo "::error::Render 部署钩子返回 HTTP $code，部署未触发。"
+            echo "排查顺序：1) 钩子是否被删除或轮换 2) Render 服务是否 suspended 3) 免费额度是否用尽"
             exit 1
           fi
-
-      - name: Deploy over SSH
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
-        run: |
-          set -euo pipefail
-          PORT="${SSH_PORT:-22}"
-          ssh -i ~/.ssh/deploy_key -p "$PORT" -o StrictHostKeyChecking=yes \
-            "$SSH_USER@$SSH_HOST" \
-            "DEPLOY_PATH='$DEPLOY_PATH' SERVICE_NAME='$SERVICE_NAME' bash -s" <<'REMOTE'
-          # ---------- 服务器侧执行 ----------
-          set -euo pipefail
-          cd "$DEPLOY_PATH"
-
-          echo "::group::1/5 拉取最新代码"
-          git fetch --prune origin
-          git pull --ff-only origin main
-          git --no-pager log -1 --oneline
-          echo "::endgroup::"
-
-          echo "::group::2/5 安装 Python 依赖"
-          # 虚拟环境在仓库根下的 .venv（见 docs/github-integration.md 的一次性准备）
-          ./.venv/bin/python -m pip install --upgrade pip
-          ./.venv/bin/python -m pip install -r backend/requirements-prod.txt
-          echo "::endgroup::"
-
-          echo "::group::3/5 数据库迁移"
-          cd backend
-          ../.venv/bin/python manage.py migrate --noinput
-          echo "::endgroup::"
-
-          echo "::group::4/5 收集静态文件（后台 SimpleUI 等）"
-          ../.venv/bin/python manage.py collectstatic --noinput
-          echo "::endgroup::"
-
-          echo "::group::5/5 重启服务"
-          if ! sudo systemctl restart "$SERVICE_NAME"; then
-            echo "::error::重启 $SERVICE_NAME 失败，以下是最近 80 行日志："
-            sudo systemctl status "$SERVICE_NAME" --no-pager || true
-            sudo journalctl -u "$SERVICE_NAME" -n 80 --no-pager || true
-            exit 1
-          fi
-          sleep 3
-          if ! systemctl is-active --quiet "$SERVICE_NAME"; then
-            echo "::error::服务未处于运行状态，以下是最近 80 行日志："
-            sudo journalctl -u "$SERVICE_NAME" -n 80 --no-pager || true
-            exit 1
-          fi
-          sudo systemctl status "$SERVICE_NAME" --no-pager | head -12
-          echo "::endgroup::"
-
-          echo "后端部署完成 ✅"
-          REMOTE
-
-      - name: Report failure
-        if: failure()
-        run: |
-          echo "::error::后端部署失败。排查顺序："
-          echo "1) Secrets 是否齐全（SSH_HOST / SSH_USER / SSH_PRIVATE_KEY / DEPLOY_PATH / SERVICE_NAME）"
-          echo "2) 服务器上 ${{ secrets.DEPLOY_PATH }} 是否为 git 仓库并已配置 origin"
-          echo "3) 登录服务器执行：sudo journalctl -u ${{ secrets.SERVICE_NAME }} -n 100 --no-pager"
+          echo "已触发 ✅ 构建进度见 https://dashboard.render.com"
