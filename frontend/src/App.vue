@@ -5,6 +5,7 @@ import { RouterView } from 'vue-router'
 import { api } from '@/api'
 import AppFooter from '@/components/AppFooter.vue'
 import AppHeader from '@/components/AppHeader.vue'
+import ConnectionBanner from '@/components/ConnectionBanner.vue'
 import ToastHost from '@/components/ToastHost.vue'
 import { loadCurrentUser } from '@/stores/auth'
 
@@ -42,6 +43,8 @@ onMounted(async () => {
     <AppHeader />
 
     <main class="app-main">
+      <!-- 后端连不上时的全局提示（任一请求成功会自动消失） -->
+      <ConnectionBanner />
       <RouterView v-slot="{ Component }">
         <Transition name="fade" mode="out-in">
           <component :is="Component" />

@@ -1,5 +1,7 @@
 import axios from 'axios'
 
+import { connectionState, markOffline, markOnline } from '@/stores/connection'
+
 // 后端接口地址：生产由 CI 注入云服务器域名，开发留空则走 Vite 代理（见 vite.config.js）
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '')
 export const API_ROOT = `${API_BASE_URL}/api`
@@ -32,6 +34,19 @@ client.interceptors.request.use((config) => {
   }
   return config
 })
+
+// 网络层失败（后端没启动、断网、超时）统一标记为"离线"，供全局横幅提示；
+// 注意 4xx/5xx 属于"后端可达"，不在此列。
+client.interceptors.response.use(
+  (response) => {
+    if (connectionState.offline) markOnline()
+    return response
+  },
+  (error) => {
+    if (!error.response) markOffline()
+    return Promise.reject(error)
+  },
+)
 
 /** 把 DRF 的各种错误结构统一成一句可展示的中文提示。 */
 export function errorMessage(error) {

@@ -240,6 +240,11 @@ Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
    若详情也只看 `approved`，作者打开自己被驳回的提交会 404、无法修改重提。
    现在 `retrieve/update/partial_update/destroy` 对作者放行自己的资料、对管理员放行全部。
 9. 分类的 `material_count` 只统计"公开且已通过"的资料，否则侧栏计数会多于公开列表条数。
+10. **后端没启动时，前端"点了没反应"是懒加载分片失败，不是功能坏了。**
+    点击导航会去请求该页面的 JS/CSS 分片，失败后 Vue Router 中断导航、页面毫无变化。
+    现在由 `stores/connection.js` + `ConnectionBanner.vue` 统一提示；
+    注意 Vite 抛的 `Unable to preload CSS` 会绕过 `router.onError`，
+    所以 `main.js` 里还兜了 `unhandledrejection` 与资源加载 `error`（捕获阶段）。
 
 ## 8. 验证方式
 
@@ -284,6 +289,8 @@ print([hex(ord(c)) for c in value])
 - **帖子置顶 / 精华**：管理员在帖子详情页操作，置顶帖在列表始终最前
 - **评论与楼层回复可编辑**：行内编辑并保留"已编辑"标记
 - **接口限流**：全站兜底 + 登录/注册 + 上传三档（见 `web/throttles.py`）
+- **后端离线提示**：网络层失败或路由分片加载失败时，顶部显示全局横幅（含接口地址与「重试」按钮），
+  任一请求成功即自动恢复，避免"点了没反应"被误认为功能故障
 - 演示数据：5 个分类 + 6 个板块 + 3 份示例资料 + 2 个示例帖子，可用 `seed_data --clear-demo` 清除
 - 超级管理员已创建（用户名 `quanhezi`；**密码不记录在本文件**，需要时问维护者）
 

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { loadCurrentUser } from '@/stores/auth'
+import { isLoadFailure, markOffline } from '@/stores/connection'
 
 // 前端路由前缀 ≠ 资源前缀，两者用途不同：
 //   1. GitHub Pages：两者相同，都是 /<仓库名>/（CI 会同时注入 VITE_BASE_PATH 与 VITE_ROUTER_BASE）
@@ -115,6 +116,16 @@ router.beforeEach(async (to) => {
 
 router.afterEach((to) => {
   document.title = to.meta.title ? `${to.meta.title} · 地理资料库` : '地理资料库'
+})
+
+// 路由懒加载失败的处理。
+// 典型场景：后端/开发服务器没启动时，点击导航会去请求该页面的 JS 分片，
+// 请求失败 → 导航被中断 → 页面毫无反应（既不跳转也不报错）。
+// 这里把它统一转换成"离线"状态，由全局横幅提示并可一键重试。
+router.onError((error) => {
+  if (isLoadFailure(error?.message)) {
+    markOffline()
+  }
 })
 
 export default router
