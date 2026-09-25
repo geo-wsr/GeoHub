@@ -21,7 +21,7 @@
 - 语言与时区：`LANGUAGE_CODE = 'zh-hans'`、`TIME_ZONE = 'Asia/Shanghai'`
 - 三级角色：游客（只读）/ 注册用户（下载、评论、发帖、提交上传）/ 管理员（审核、管理全站内容）
 - 前台三大入口：首页 / 资料库 / 论坛；细分分类与板块在页面侧边栏切换
-- 本仓库目前**不是 git 仓库**（无 `.git`），提交历史无从追溯
+- 已是 git 仓库：分支 `main`，首个提交 `761034d`；**尚未配置远端**（纯本地）
 - 所有源码使用 UTF-8，注释与界面文案为中文
 
 ## 2. 目录结构
@@ -190,6 +190,8 @@ Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
 - JavaScript / Vue：2 空格缩进、**不加行尾分号**、单引号、用 `@/` 别名指向 `src/`。
 - Vue 组件统一用 `<script setup>` + Composition API。
 - 界面文案与注释写中文；接口路径用英文小写加连字符（如 `/api/site-info/`）。
+- 换行统一 LF（`.gitattributes` 中 `* text=auto eol=lf`，仅 `.bat` / `.ps1` 保留 CRLF）；
+  提交信息里的中文用 `git commit -F <utf8文件>` 传入，避免控制台编码把信息写乱。
 
 ## 7. 变更纪律（踩过的坑）
 
@@ -275,7 +277,7 @@ print([hex(ord(c)) for c in value])
 - 鉴权只有 Session 认证（未接 Token/JWT）；限流用 LocMemCache，多进程部署需换 Redis
 - 没有生产配置：`DEBUG=True`、`SECRET_KEY` 是自动生成的不安全值、`ALLOWED_HOSTS` 为空、
   未接入 WhiteNoise/Nginx，媒体文件（`/media/`）在 `DEBUG=False` 下不会被 Django 托管
-- 未初始化 git 仓库
+- 未配置 git 远端与 CI（本地 `main` 分支，无自动构建/部署）
 
 ## 10. 安全红线
 
