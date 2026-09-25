@@ -23,6 +23,7 @@ const editId = computed(() => (route.query.edit ? Number(route.query.edit) : nul
 const isEditing = computed(() => Boolean(editId.value))
 
 const categories = ref([])
+const categoriesError = ref('')
 const form = ref({ title: '', category: '', description: '', tags: '' })
 const file = ref(null)
 const dragging = ref(false)
@@ -105,13 +106,27 @@ async function submit() {
   }
 }
 
-onMounted(async () => {
+/**
+ * 分类是进页面时现取的。冷启动/断网导致取不到时必须有明确提示，
+ * 否则用户只看到一个空下拉框，会以为功能坏了（线上就这么踩过一次）。
+ */
+async function loadCategories() {
+  categoriesError.value = ''
   try {
     categories.value = await api.categories()
-    if (categories.value.length) form.value.category = String(categories.value[0].id)
-  } catch {
+    if (categories.value.length) {
+      form.value.category = String(categories.value[0].id)
+    } else {
+      categoriesError.value = '后端还没返回分类数据。'
+    }
+  } catch (error) {
     categories.value = []
+    categoriesError.value = errorMessage(error)
   }
+}
+
+onMounted(async () => {
+  await loadCategories()
 
   if (!editId.value) return
   try {
@@ -167,14 +182,21 @@ onMounted(async () => {
 
       <label class="field">
         <span class="field__label">所属分类<span class="field__required">*</span></span>
-        <select v-model="form.category" class="select">
-          <option value="" disabled>请选择分类</option>
+        <select v-model="form.category" class="select" :disabled="!categories.length">
+          <option value="" disabled>{{ categories.length ? '请选择分类' : '分类加载中…' }}</option>
           <option v-for="item in categories" :key="item.id" :value="String(item.id)">
             {{ item.name }}
           </option>
         </select>
         <span v-if="errors.category" class="field__error">{{ errors.category }}</span>
       </label>
+      <!-- 分类取不到时给出原因与重试入口（放 label 外面，避免按钮的可访问名称被 label 文本污染） -->
+      <p v-if="categoriesError" class="field__error">
+        {{ categoriesError }}
+        <button class="btn btn--secondary btn--sm" type="button" @click="loadCategories">
+          重新加载分类
+        </button>
+      </p>
 
       <label class="field">
         <span class="field__label">标签</span>
