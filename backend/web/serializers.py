@@ -438,6 +438,9 @@ class TopicWriteSerializer(serializers.ModelSerializer):
         value = value.strip()
         if len(value) < 10:
             raise serializers.ValidationError('正文至少 10 个字符，请把问题描述清楚。')
+        # 与前端 maxlength 对齐：Markdown 源码上限，避免超长内容拖垮渲染
+        if len(value) > 5000:
+            raise serializers.ValidationError('正文不能超过 5000 个字符。')
         return value
 
     def _sync_tags(self, instance, tag_names):

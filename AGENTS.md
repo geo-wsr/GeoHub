@@ -245,6 +245,10 @@ Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
     现在由 `stores/connection.js` + `ConnectionBanner.vue` 统一提示；
     注意 Vite 抛的 `Unable to preload CSS` 会绕过 `router.onError`，
     所以 `main.js` 里还兜了 `unhandledrejection` 与资源加载 `error`（捕获阶段）。
+11. **DOMPurify 的 `ALLOWED_URI_REGEXP` 会连带校验"非 URI 属性"的值。**
+    自定义该正则后，`target="_blank"` 里的 `_blank` 不像 URI，整条属性会被悄悄删掉
+    （表现为外链不再新窗口打开、`rel="noopener"` 丢失）。解决办法是把这类属性加进
+    `ADD_URI_SAFE_ATTR`，见 `frontend/src/utils/markdown.js`。
 
 ## 8. 验证方式
 
@@ -291,6 +295,9 @@ print([hex(ord(c)) for c in value])
 - **接口限流**：全站兜底 + 登录/注册 + 上传三档（见 `web/throttles.py`）
 - **后端离线提示**：网络层失败或路由分片加载失败时，顶部显示全局横幅（含接口地址与「重试」按钮），
   任一请求成功即自动恢复，避免"点了没反应"被误认为功能故障
+- **Markdown 渲染**：论坛正文 / 楼层回复 / 资料评论统一支持 Markdown（前端渲染：
+  markdown-it 关闭原始 HTML + DOMPurify 白名单清洗），编辑器带轻量工具栏；
+  Markdown 运行库被拆成独立分片，不影响首屏体积
 - 演示数据：5 个分类 + 6 个板块 + 3 份示例资料 + 2 个示例帖子，可用 `seed_data --clear-demo` 清除
 - 超级管理员已创建（用户名 `quanhezi`；**密码不记录在本文件**，需要时问维护者）
 

@@ -8,6 +8,8 @@ import { pushToast } from '@/stores/toast'
 import { formatDate } from '@/utils/format'
 import AppIcon from './AppIcon.vue'
 import EmptyState from './EmptyState.vue'
+import MarkdownContent from './MarkdownContent.vue'
+import MarkdownEditor from './MarkdownEditor.vue'
 import PaginationBar from './PaginationBar.vue'
 import UserAvatar from './UserAvatar.vue'
 
@@ -148,11 +150,13 @@ defineExpose({ load })
         <span>正在回复 <strong>@{{ replyTo.author.display_name }}</strong></span>
         <button class="btn btn--text btn--sm" type="button" @click="replyTo = null">取消</button>
       </div>
-      <textarea
+      <MarkdownEditor
         v-model="content"
-        class="textarea composer__input"
-        maxlength="1000"
-        :placeholder="authState.user ? '写下你的看法，支持 1000 字以内…' : '登录后即可参与讨论'"
+        :maxlength="1000"
+        :rows="4"
+        :placeholder="
+          authState.user ? '写下你的看法，支持 Markdown，1000 字以内…' : '登录后即可参与讨论'
+        "
       />
       <div class="composer__foot">
         <span class="composer__counter num">{{ content.length }}/1000</span>
@@ -201,10 +205,10 @@ defineExpose({ load })
               </button>
             </div>
           </div>
-          <p v-else class="comment__content">
-            {{ item.content }}
-            <span v-if="item.edited_at" class="comment__edited">已编辑</span>
-          </p>
+          <MarkdownContent v-else class="comment__content" :source="item.content" />
+          <span v-if="item.edited_at && editingId !== item.id" class="comment__edited">
+            已编辑
+          </span>
           <div class="comment__actions">
             <button class="btn btn--text btn--sm" type="button" @click="replyTo = item">
               回复
@@ -252,10 +256,10 @@ defineExpose({ load })
                     </button>
                   </div>
                 </div>
-                <p v-else class="comment__content">
-                  {{ reply.content }}
-                  <span v-if="reply.edited_at" class="comment__edited">已编辑</span>
-                </p>
+                <MarkdownContent v-else class="comment__content" :source="reply.content" />
+                <span v-if="reply.edited_at && editingId !== reply.id" class="comment__edited">
+                  已编辑
+                </span>
                 <div class="comment__actions">
                   <!-- 回复"回复"时仍然挂到所属的一级评论，保持两级结构 -->
                   <button class="btn btn--text btn--sm" type="button" @click="replyTo = item">
@@ -408,12 +412,8 @@ defineExpose({ load })
 }
 
 .comment__content {
+  /* 排版交给 .md-body；这里只保留与元信息的间距 */
   margin-top: 2px;
-  color: var(--text-1);
-  font-size: var(--fs-body);
-  line-height: var(--lh-body);
-  white-space: pre-wrap;
-  word-break: break-word;
 }
 
 .comment__actions {
@@ -434,7 +434,9 @@ defineExpose({ load })
 }
 
 .comment__edited {
-  margin-left: 6px;
+  /* 渲染后的正文是块级元素，"已编辑"标记另起一行紧跟其后 */
+  display: inline-block;
+  margin-top: 2px;
   color: var(--text-3);
   font-size: var(--fs-small);
 }

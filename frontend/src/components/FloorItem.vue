@@ -5,6 +5,7 @@ import { api, errorMessage } from '@/api'
 import { pushToast } from '@/stores/toast'
 import { formatDate } from '@/utils/format'
 import AppIcon from './AppIcon.vue'
+import MarkdownContent from './MarkdownContent.vue'
 import UserAvatar from './UserAvatar.vue'
 
 // 论坛楼层：左侧头像 + 楼层号，右侧主体内容。
@@ -78,10 +79,8 @@ async function saveEdit(item) {
           </button>
         </div>
       </div>
-      <p v-else class="floor__text">
-        {{ post.content }}
-        <span v-if="post.edited_at" class="floor__edited">已编辑</span>
-      </p>
+      <MarkdownContent v-else class="floor__text" :source="post.content" />
+      <span v-if="post.edited_at && editingId !== post.id" class="floor__edited">已编辑</span>
 
       <div class="floor__actions">
         <button class="btn btn--text btn--sm" type="button" @click="emit('reply', post)">
@@ -130,10 +129,10 @@ async function saveEdit(item) {
                 </button>
               </div>
             </div>
-            <p v-else class="floor__text">
-              {{ reply.content }}
-              <span v-if="reply.edited_at" class="floor__edited">已编辑</span>
-            </p>
+            <MarkdownContent v-else class="floor__text" :source="reply.content" />
+            <span v-if="reply.edited_at && editingId !== reply.id" class="floor__edited">
+              已编辑
+            </span>
             <div class="floor__actions">
               <!-- 回复二级回复时仍然挂到本楼层下，保持两级结构 -->
               <button class="btn btn--text btn--sm" type="button" @click="emit('reply', post)">
@@ -212,11 +211,8 @@ async function saveEdit(item) {
 }
 
 .floor__text {
+  /* 排版交给 .md-body；这里只保留与头像/元信息的间距 */
   margin-top: 4px;
-  color: var(--text-1);
-  line-height: var(--lh-body);
-  white-space: pre-wrap;
-  word-break: break-word;
 }
 
 .floor__actions {
@@ -237,7 +233,9 @@ async function saveEdit(item) {
 }
 
 .floor__edited {
-  margin-left: 6px;
+  /* 渲染后的正文是块级元素，"已编辑"标记另起一行紧跟其后 */
+  display: inline-block;
+  margin-top: 2px;
   color: var(--text-3);
   font-size: var(--fs-small);
 }

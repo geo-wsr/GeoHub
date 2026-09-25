@@ -6,6 +6,8 @@ import { api, errorMessage } from '@/api'
 import AppIcon from '@/components/AppIcon.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import FloorItem from '@/components/FloorItem.vue'
+import MarkdownContent from '@/components/MarkdownContent.vue'
+import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
 import SkeletonCard from '@/components/SkeletonCard.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
@@ -256,7 +258,8 @@ watch(() => props.id, loadTopic, { immediate: true })
           </div>
 
           <div class="divider" />
-          <p class="topic__content">{{ topic.content }}</p>
+          <!-- 正文按 Markdown 渲染（已禁用原始 HTML 并做白名单清洗） -->
+          <MarkdownContent class="topic__content" :source="topic.content" />
         </div>
 
         <!-- 楼层区：按时间正序 -->
@@ -296,11 +299,14 @@ watch(() => props.id, loadTopic, { immediate: true })
             <span>正在回复 <strong>@{{ replyTo.author?.display_name }}</strong></span>
             <button class="btn btn--text btn--sm" type="button" @click="replyTo = null">取消</button>
           </div>
-          <textarea
+          <MarkdownEditor
             v-model="content"
-            class="textarea composer__input"
-            maxlength="1000"
-            :placeholder="authState.user ? '写下你的回复，支持 1000 字以内…' : '登录后即可参与讨论'"
+            class="composer__input"
+            :maxlength="1000"
+            :rows="4"
+            :placeholder="
+              authState.user ? '写下你的回复，支持 Markdown，1000 字以内…' : '登录后即可参与讨论'
+            "
           />
           <div class="composer__foot">
             <span class="composer__counter num">{{ content.length }}/1000</span>
@@ -439,10 +445,8 @@ watch(() => props.id, loadTopic, { immediate: true })
 }
 
 .topic__content {
-  color: var(--text-1);
-  line-height: var(--lh-body);
-  white-space: pre-wrap;
-  word-break: break-word;
+  /* 具体排版由 .md-body 负责，这里不再使用 pre-wrap（否则会与块级元素叠加出多余空行） */
+  margin-top: 4px;
 }
 
 .floors {

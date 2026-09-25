@@ -4,6 +4,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { api, errorMessage } from '@/api'
 import AppIcon from '@/components/AppIcon.vue'
+import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import { pushToast } from '@/stores/toast'
 
 const route = useRoute()
@@ -107,7 +108,9 @@ onMounted(async () => {
 
     <header class="topic-new__head">
       <h1>{{ isEditing ? '编辑帖子' : '发布新帖' }}</h1>
-      <p class="text-small text-muted">正文支持纯文本与分段换行，发布后作者可自行删除。</p>
+      <p class="text-small text-muted">
+        正文支持 Markdown（粗体、列表、引用、代码、链接、表格），发布后作者可自行删除。
+      </p>
     </header>
 
     <form class="card topic-new__form" @submit.prevent="submit">
@@ -136,11 +139,12 @@ onMounted(async () => {
 
       <label class="field">
         <span class="field__label">正文<span class="field__required">*</span></span>
-        <textarea
+        <MarkdownEditor
           v-model="form.content"
-          class="textarea topic-new__content"
-          maxlength="5000"
-          placeholder="把背景、你已经尝试过的做法和具体疑问写清楚，更容易得到有效回复。"
+          class="topic-new__content"
+          :maxlength="5000"
+          :rows="12"
+          placeholder="把背景、你已经尝试过的做法和具体疑问写清楚，更容易得到有效回复。支持 Markdown 语法。"
         />
         <span v-if="errors.content" class="field__error">{{ errors.content }}</span>
       </label>

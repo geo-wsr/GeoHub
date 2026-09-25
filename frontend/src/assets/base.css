@@ -427,3 +427,134 @@ button.pill:hover {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ==========================================================================
+   Markdown 渲染内容（论坛正文 / 楼层回复 / 资料评论共用）
+   由 MarkdownContent.vue 输出，容器类名统一为 .md-body，配色全部走主题令牌
+   ========================================================================== */
+.md-body {
+  color: var(--text-1);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  word-break: break-word;
+}
+
+.md-body > :first-child {
+  margin-top: 0;
+}
+
+.md-body > :last-child {
+  margin-bottom: 0;
+}
+
+.md-body p {
+  margin: 0.6em 0;
+}
+
+.md-body h1,
+.md-body h2,
+.md-body h3,
+.md-body h4,
+.md-body h5,
+.md-body h6 {
+  margin: 1.1em 0 0.5em;
+  color: var(--text-1);
+  line-height: var(--lh-tight);
+}
+
+.md-body h1 {
+  font-size: 1.4em;
+  font-weight: var(--fw-semibold);
+}
+
+.md-body h2 {
+  font-size: 1.22em;
+  font-weight: var(--fw-semibold);
+}
+
+.md-body h3 {
+  font-size: 1.08em;
+  font-weight: var(--fw-medium);
+}
+
+.md-body h4,
+.md-body h5,
+.md-body h6 {
+  font-size: 1em;
+  font-weight: var(--fw-medium);
+}
+
+.md-body ul,
+.md-body ol {
+  margin: 0.6em 0;
+  padding-left: 1.5em;
+}
+
+.md-body li {
+  margin: 0.25em 0;
+}
+
+.md-body blockquote {
+  margin: 0.8em 0;
+  padding: 0.5em 0.9em;
+  border-left: 3px solid var(--border-strong);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--bg-hover);
+  color: var(--text-2);
+}
+
+.md-body code {
+  padding: 0.12em 0.4em;
+  border-radius: 4px;
+  background: var(--bg-hover);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.md-body pre {
+  margin: 0.8em 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+}
+
+.md-body pre code {
+  /* 代码块内部不再叠加底色 */
+  padding: 0;
+  background: transparent;
+  font-size: 0.88em;
+}
+
+.md-body img {
+  max-width: 100%;
+  margin: 0.6em 0;
+  border-radius: var(--radius-sm);
+}
+
+.md-body hr {
+  height: 1px;
+  margin: 1.2em 0;
+  border: 0;
+  background: var(--border);
+}
+
+.md-body table {
+  width: 100%;
+  margin: 0.8em 0;
+  border-collapse: collapse;
+  font-size: var(--fs-small);
+}
+
+.md-body th,
+.md-body td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.md-body th {
+  background: var(--bg-hover);
+  font-weight: var(--fw-medium);
+}
