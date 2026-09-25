@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 # --------------------------------------------------------------------------
 # 环境变量工具：密钥、域名、开关一律从环境变量注入，代码里不硬编码
 # 本地开发把变量写在 backend/.env（已被 .gitignore 忽略）；生产用系统环境变量
@@ -58,11 +60,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
+DEBUG = env_bool('DJANGO_DEBUG', True)
+
 # SECRET_KEY 必须由环境变量提供（本地开发可放 backend/.env）
 # 生成：python -c "from django.core.management.utils import get_random_secret_key as k; print(k())"
-SECRET_KEY = env('DJANGO_SECRET_KEY', 'django-insecure-dev-only-change-me')
-
-DEBUG = env_bool('DJANGO_DEBUG', True)
+# 生产环境（DEBUG=False）未配置就直接报错，避免误用公开的兜底密钥
+SECRET_KEY = env('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-dev-only-change-me'
+    else:
+        raise ImproperlyConfigured(
+            'DJANGO_DEBUG=False 时必须通过环境变量 DJANGO_SECRET_KEY 提供密钥'
+        )
 
 # 逗号分隔，例如：api.example.com,127.0.0.1,localhost
 ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost')
