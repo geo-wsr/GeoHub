@@ -107,6 +107,25 @@ GitHub 登录用户**一律是普通用户**（适配器 `backend/web/adapters.p
 > 若坚持私有桶，要把 `AWS_QUERYSTRING_AUTH=true`，但论坛图片会变成短期签名地址，
 > 富文本里存下来的图片链接过期后就显示不出来了。
 
+#### 备选：Supabase Storage（没有国际卡时用这个）
+
+R2 激活订阅时要求绑定付款方式（信用卡），没有卡就换 Supabase Storage：
+免费 1GB 存储 + 5GB/月流量、注册无需绑卡、同样走 S3 协议，**后端代码一行都不用改**，
+只是环境变量的值换成 Supabase 给的：
+
+| Render 变量 | 填什么 |
+| --- | --- |
+| `AWS_STORAGE_BUCKET_NAME` | 桶名，如 `geohub-media`（建桶时必须开 **Public bucket**） |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Project Settings → Storage → S3 access keys 生成 |
+| `AWS_S3_ENDPOINT_URL` | `https://<project-ref>.supabase.co/storage/v1/s3` |
+| `AWS_S3_REGION_NAME` | 项目真实区域，新加坡为 `ap-southeast-1`（**不能填 `auto`**） |
+| `AWS_S3_CUSTOM_DOMAIN` | `<project-ref>.supabase.co/storage/v1/object/public/<桶名>` |
+
+> 取 `<project-ref>`：Project Settings → General → **Project ID**，
+> 或看控制台网址里的 `dashboard/project/<ref>` 一段。
+> 注意 Supabase 控制台依赖 `api.supabase.com`，在 Codex 应用内浏览器里会被策略拦截，
+> 这一步请用系统自带浏览器（Edge / Chrome）操作。
+
 ### 3.3 Render（Django 后端）
 
 1. 注册 <https://render.com>（用 GitHub 账号登录）
@@ -125,7 +144,7 @@ GitHub 登录用户**一律是普通用户**（适配器 `backend/web/adapters.p
 | `AWS_STORAGE_BUCKET_NAME` | `geohub-media` | **设置了它才会启用对象存储** |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | R2 API Token | 见 3.2 |
 | `AWS_S3_ENDPOINT_URL` | `https://<account_id>.r2.cloudflarestorage.com` | 见 3.2 |
-| `AWS_S3_REGION_NAME` | `auto` | R2 固定用 `auto` |
+| `AWS_S3_REGION_NAME` | `auto` / `ap-southeast-1` | R2 固定 `auto`；Supabase Storage 必须填项目真实区域 |
 | `AWS_S3_CUSTOM_DOMAIN` | `pub-xxxx.r2.dev` | 桶的公开域名；填了它 `MEDIA_URL` 才会指向 R2 |
 | `AWS_QUERYSTRING_AUTH` | `false` | 公开桶保持 false |
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | OAuth App 的值 | 见第 2 节 |

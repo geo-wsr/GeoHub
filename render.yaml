@@ -41,6 +41,9 @@ services:
         sync: false
       - key: AWS_S3_ENDPOINT_URL
         sync: false
+      # Cloudflare R2 填 auto；Supabase Storage 必须填项目真实区域（如 ap-southeast-1）
+      - key: AWS_S3_REGION_NAME
+        sync: false
       - key: AWS_S3_CUSTOM_DOMAIN
         sync: false
       - key: GITHUB_CLIENT_ID
