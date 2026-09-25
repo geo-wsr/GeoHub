@@ -1,0 +1,429 @@
+/* ==========================================================================
+   基础样式：重置、排版、容器、按钮、表单、卡片、骨架屏
+   ========================================================================== */
+
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  /* 关闭字间距紧缩，保持专业文档观感 */
+  letter-spacing: normal;
+}
+
+html {
+  background: var(--bg-page);
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg-page);
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  /* 主题切换：全局颜色平滑过渡，无生硬跳变 */
+  transition: background-color var(--dur-theme) var(--ease), color var(--dur-theme) var(--ease);
+}
+
+/* 数字与拉丁文字使用 Inter，保证跨平台一致 */
+.num,
+time,
+.latin {
+  font-family: var(--font-latin);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  color: var(--text-1);
+  transition: color var(--dur-theme) var(--ease);
+}
+
+h1 {
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+}
+
+h2 {
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+}
+
+h3 {
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-title);
+}
+
+h4 {
+  font-size: var(--fs-h4);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-title);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--color-secondary);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease);
+}
+
+a:hover {
+  color: var(--color-primary);
+}
+
+small,
+.text-small {
+  font-size: var(--fs-small);
+  line-height: var(--lh-small);
+  color: var(--text-3);
+}
+
+.text-muted {
+  color: var(--text-3);
+}
+
+.text-secondary {
+  color: var(--text-2);
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* —— 容器：最大宽度 1200px，水平居中，左右留白自适应 —— */
+.container {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.section {
+  margin-bottom: 32px;
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* —— 骨架屏：线条呼吸动画 —— */
+@keyframes skeleton-breath {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.skeleton {
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+  animation: skeleton-breath 1.4s var(--ease) infinite;
+}
+
+/* —— 按钮体系 —— */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+
+.btn:active:not(:disabled) {
+  /* 按压反馈：轻微缩放 */
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  color: #fff;
+}
+
+.btn--secondary {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background: var(--color-primary-soft);
+}
+
+.btn--text {
+  padding: 4px 6px;
+  color: var(--text-3);
+}
+
+.btn--text:hover:not(:disabled) {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.btn--danger {
+  color: var(--color-danger);
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: var(--color-accent-soft);
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.btn--sm {
+  padding: 5px 12px;
+  font-size: var(--fs-small);
+}
+
+/* —— 表单 —— */
+.field {
+  display: block;
+  margin-bottom: 18px;
+}
+
+.field__label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: var(--fs-h4);
+  font-weight: var(--fw-medium);
+  color: var(--text-2);
+}
+
+.field__required {
+  margin-left: 4px;
+  color: var(--color-danger);
+}
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: var(--fs-body);
+  line-height: var(--lh-title);
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease),
+    background-color var(--dur-theme) var(--ease);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--text-3);
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  /* 聚焦时极淡外发光 */
+  box-shadow: var(--shadow-focus);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.field__error {
+  margin-top: 6px;
+  font-size: var(--fs-small);
+  line-height: var(--lh-small);
+  color: var(--color-danger);
+}
+
+.field__hint {
+  margin-top: 6px;
+  font-size: var(--fs-small);
+  color: var(--text-3);
+}
+
+/* —— 卡片 —— */
+.card {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
+  transition: background-color var(--dur-theme) var(--ease),
+    border-color var(--dur-theme) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+
+/* —— 胶囊标签 —— */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: var(--fs-small);
+  line-height: 1.7;
+  white-space: nowrap;
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.pill--accent {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.pill--ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+
+/* —— 置顶 / 精华标记（帖子卡片与详情页共用） —— */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-small);
+  line-height: 1.8;
+  white-space: nowrap;
+}
+
+.badge--pin {
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.badge--feature {
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+button.pill {
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+button.pill:hover {
+  background: var(--color-secondary-soft);
+  color: var(--color-primary);
+}
+
+/* —— 分割线 —— */
+.divider {
+  height: 1px;
+  background: var(--border);
+  border: 0;
+  margin: 16px 0;
+}
+
+/* —— 路由切换淡入淡出 —— */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--dur-page) var(--ease);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* —— 横向滚动容器（首页热门下载） —— */
+.scroll-x {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+}
+
+.scroll-x::-webkit-scrollbar {
+  height: 6px;
+}
+
+.scroll-x::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-pill);
+}
+
+/* —— 通用动画：淡入上移 —— */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise-in {
+  animation: rise-in var(--dur-page) var(--ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
