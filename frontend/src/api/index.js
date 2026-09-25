@@ -144,6 +144,18 @@ export const api = {
   updateComment: (id, payload) => client.patch(`/comments/${id}/`, payload).then((r) => r.data),
   updatePost: (id, payload) => client.patch(`/posts/${id}/`, payload).then((r) => r.data),
 
+  // 论坛附件/图片：上传后返回绝对 URL，由编辑器插入 Markdown 正文
+  uploadAttachment: (file, onUploadProgress) => {
+    const form = new FormData()
+    form.append('file', file)
+    return client
+      .post('/attachments/', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress,
+      })
+      .then((r) => r.data)
+  },
+
   // 帖子置顶 / 加精（仅管理员）
   toggleTopicPin: (id) => client.post(`/topics/${id}/pin/`).then((r) => r.data),
   toggleTopicFeature: (id) => client.post(`/topics/${id}/feature/`).then((r) => r.data),

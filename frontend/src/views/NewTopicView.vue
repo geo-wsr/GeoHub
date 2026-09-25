@@ -137,7 +137,9 @@ onMounted(async () => {
         <span v-if="errors.title" class="field__error">{{ errors.title }}</span>
       </label>
 
-      <label class="field">
+      <!-- 用 div 而非 label：编辑器内部含按钮，交互控件不应包在 <label> 里，
+           否则工具栏按钮的可访问名称会被 label 文本污染 -->
+      <div class="field">
         <span class="field__label">正文<span class="field__required">*</span></span>
         <MarkdownEditor
           v-model="form.content"
@@ -147,7 +149,7 @@ onMounted(async () => {
           placeholder="把背景、你已经尝试过的做法和具体疑问写清楚，更容易得到有效回复。支持 Markdown 语法。"
         />
         <span v-if="errors.content" class="field__error">{{ errors.content }}</span>
-      </label>
+      </div>
 
       <label class="field">
         <span class="field__label">标签</span>

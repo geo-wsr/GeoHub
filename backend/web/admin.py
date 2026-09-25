@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import (
+    Attachment,
     Category,
     Comment,
     DownloadRecord,
@@ -147,3 +148,11 @@ class NotificationAdmin(admin.ModelAdmin):
     list_display = ('recipient', 'kind', 'text', 'is_read', 'created_at')
     list_filter = ('kind', 'is_read', 'created_at')
     search_fields = ('recipient__username', 'text')
+
+
+@admin.register(Attachment)
+class AttachmentAdmin(admin.ModelAdmin):
+    list_display = ('original_name', 'uploader', 'file_ext', 'file_size', 'is_image', 'created_at')
+    list_filter = ('is_image', 'file_ext', 'created_at')
+    search_fields = ('original_name', 'uploader__username')
+    date_hierarchy = 'created_at'

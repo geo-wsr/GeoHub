@@ -1,6 +1,10 @@
 <script setup>
 import { ref } from 'vue'
 
+import { api, errorMessage } from '@/api'
+import { authState } from '@/stores/auth'
+import { pushToast } from '@/stores/toast'
+
 const props = defineProps({
   modelValue: { type: String, default: '' },
   placeholder: { type: String, default: '' },
@@ -11,6 +15,69 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const textareaRef = ref(null)
+const fileInput = ref(null)
+const uploading = ref(false)
+const dragging = ref(false)
+
+/** 在光标处插入纯文本（附件片段也走这里） */
+function insertText(text) {
+  const el = textareaRef.value
+  if (!el) return
+  const value = props.modelValue || ''
+  const start = el.selectionStart
+  const end = el.selectionEnd
+  emit('update:modelValue', value.slice(0, start) + text + value.slice(end))
+  window.requestAnimationFrame(() => {
+    el.focus()
+    el.setSelectionRange(start + text.length, start + text.length)
+  })
+}
+
+/** 上传附件并把 Markdown 片段插入正文：图片用 ![]()，其他文件用 []() */
+async function uploadAndInsert(file) {
+  if (!file) return
+  if (!authState.user) {
+    pushToast('登录后才能上传图片或附件', 'info')
+    return
+  }
+  uploading.value = true
+  try {
+    const data = await api.uploadAttachment(file)
+    const snippet = data.is_image
+      ? `![${data.original_name}](${data.url})`
+      : `[${data.original_name}](${data.url})`
+    insertText(snippet)
+    pushToast(data.is_image ? '图片已插入正文' : '附件已插入正文', 'success')
+  } catch (error) {
+    pushToast(errorMessage(error), 'error')
+  } finally {
+    uploading.value = false
+  }
+}
+
+function handlePicked(event) {
+  const file = event.target.files?.[0]
+  // 清空 value，便于再次选择同一个文件
+  event.target.value = ''
+  uploadAndInsert(file)
+}
+
+/** 支持直接粘贴截图（截图后 Ctrl+V 即可上传） */
+function handlePaste(event) {
+  const items = Array.from(event.clipboardData?.items || [])
+  const fileItem = items.find((item) => item.kind === 'file')
+  if (!fileItem) return
+  event.preventDefault()
+  uploadAndInsert(fileItem.getAsFile())
+}
+
+function handleDrop(event) {
+  dragging.value = false
+  const file = event.dataTransfer?.files?.[0]
+  if (!file) return
+  event.preventDefault()
+  uploadAndInsert(file)
+}
 
 // 轻量工具栏：只做"在光标处插入语法"，不做富文本（保持纯 Markdown 源码可编辑）
 const TOOLS = [
@@ -55,7 +122,7 @@ function applyTool(tool) {
 
 <template>
   <div class="md-editor">
-    <div class="md-editor__bar">
+    <div class="md-editor__bar" :class="{ 'is-dragging': dragging }">
       <button
         v-for="tool in TOOLS"
         :key="tool.label"
@@ -66,8 +133,24 @@ function applyTool(tool) {
       >
         {{ tool.label }}
       </button>
-      <span class="md-editor__tip">支持 Markdown</span>
+      <button
+        class="md-editor__btn"
+        type="button"
+        :disabled="uploading"
+        title="插入图片或附件（也可以直接粘贴截图、把文件拖进输入框）"
+        @click="fileInput?.click()"
+      >
+        {{ uploading ? '上传中…' : '图片/附件' }}
+      </button>
+      <span class="md-editor__tip">支持 Markdown · 可粘贴图片</span>
     </div>
+    <input
+      ref="fileInput"
+      class="md-editor__file"
+      type="file"
+      accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.zip"
+      @change="handlePicked"
+    />
     <textarea
       ref="textareaRef"
       class="textarea md-editor__input"
@@ -76,6 +159,10 @@ function applyTool(tool) {
       :maxlength="maxlength"
       :rows="rows"
       @input="emit('update:modelValue', $event.target.value)"
+      @paste="handlePaste"
+      @drop="handleDrop"
+      @dragover.prevent="dragging = true"
+      @dragleave="dragging = false"
     />
   </div>
 </template>
@@ -118,6 +205,20 @@ function applyTool(tool) {
 .md-editor__btn:hover {
   background: var(--bg-card);
   color: var(--color-primary);
+}
+
+.md-editor__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.md-editor__bar.is-dragging {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.md-editor__file {
+  display: none;
 }
 
 .md-editor__tip {

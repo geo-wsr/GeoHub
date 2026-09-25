@@ -177,6 +177,8 @@ Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
 | `GET\|POST topics/{id}/posts/` | 楼层回复（一级按时间正序、含二级 replies、分页）；POST 需登录 |
 | `PATCH\|DELETE posts/{id}/` | 编辑 / 删除；仅作者或 staff，编辑会打 `edited_at` |
 | `POST topics/{id}/pin/`、`feature/` | **仅管理员**：置顶 / 加精开关（置顶帖在列表最前） |
+| `POST attachments/` | 论坛图片/附件上传（multipart `file`），需登录；返回**绝对 URL** 供 Markdown 引用 |
+| `DELETE attachments/{id}/` | 仅上传者或 staff |
 | `POST auth/csrf\|login\|logout\|register/`、`GET auth/me/` | 会话认证；`auth/csrf/` 同时返回 csrftoken（跨域时前端读不到 Cookie） |
 | `GET auth/providers/` | 第三方登录可用性与入口地址（GitHub） |
 | `/accounts/github/login/`（后端页面） | allauth 的 GitHub OAuth 入口与回调，成功后 302 回 `<FRONTEND_URL>/oauth/callback` |
@@ -208,6 +210,8 @@ Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
 - JavaScript / Vue：2 空格缩进、**不加行尾分号**、单引号、用 `@/` 别名指向 `src/`。
 - Vue 组件统一用 `<script setup>` + Composition API。
 - 界面文案与注释写中文；接口路径用英文小写加连字符（如 `/api/site-info/`）。
+- 含交互控件的表单区域（如 Markdown 编辑器）用 `<div class="field">` 而不是 `<label class="field">`，
+  否则内部按钮的可访问名称会被 label 文本污染（曾把"粗体"按钮的名字变成整段说明）。
 - 换行统一 LF（`.gitattributes` 中 `* text=auto eol=lf`，仅 `.bat` / `.ps1` 保留 CRLF）；
   提交信息里的中文用 `git commit -F <utf8文件>` 传入，避免控制台编码把信息写乱。
 
@@ -298,6 +302,9 @@ print([hex(ord(c)) for c in value])
 - **Markdown 渲染**：论坛正文 / 楼层回复 / 资料评论统一支持 Markdown（前端渲染：
   markdown-it 关闭原始 HTML + DOMPurify 白名单清洗），编辑器带轻量工具栏；
   Markdown 运行库被拆成独立分片，不影响首屏体积
+- **论坛图片 / 附件上传**：编辑器支持按钮选择、**粘贴截图**、拖拽文件三种方式，
+  自动把 `![名](url)` / `[名](url)` 插入光标处；图片 ≤5MB、其他附件 ≤20MB，
+  故意不允许 `.svg`（可内嵌脚本）；上传后返回绝对 URL，跨域部署也不会指错站点
 - 演示数据：5 个分类 + 6 个板块 + 3 份示例资料 + 2 个示例帖子，可用 `seed_data --clear-demo` 清除
 - 超级管理员已创建（用户名 `quanhezi`；**密码不记录在本文件**，需要时问维护者）
 

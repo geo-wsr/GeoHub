@@ -28,6 +28,7 @@ from rest_framework.permissions import (
 from rest_framework.response import Response
 
 from .models import (
+    Attachment,
     Category,
     Comment,
     DownloadRecord,
@@ -41,6 +42,7 @@ from .models import (
     Topic,
 )
 from .serializers import (
+    AttachmentSerializer,
     CategorySerializer,
     CommentSerializer,
     CurrentUserSerializer,
@@ -935,6 +937,32 @@ class MyPostViewSet(viewsets.ReadOnlyModelViewSet):
             .select_related('author', 'topic')
             .order_by('-created_at')
         )
+
+
+class AttachmentViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    """论坛附件上传 / 删除。
+
+    上传成功后返回绝对 URL，前端把它插入 Markdown 正文；
+    删除仅限上传者本人或管理员（用于清理误传内容）。
+    """
+
+    serializer_class = AttachmentSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Attachment.objects.select_related('uploader')
+
+    def get_throttles(self):
+        # 上传走独立的按用户限流，防止刷附件
+        if self.action == 'create':
+            return [UploadRateThrottle()]
+        return super().get_throttles()
+
+    def destroy(self, request, *args, **kwargs):
+        attachment = self.get_object()
+        if attachment.uploader_id != request.user.id and not request.user.is_staff:
+            raise PermissionDenied('只能删除自己上传的附件。')
+        attachment.file.delete(save=False)
+        attachment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(['GET'])

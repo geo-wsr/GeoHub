@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from .models import (
+    Attachment,
     Category,
     Comment,
     DownloadRecord,
@@ -94,6 +95,65 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = ('id', 'kind', 'kind_display', 'text', 'url', 'is_read', 'actor', 'created_at')
+
+
+class AttachmentSerializer(serializers.ModelSerializer):
+    """论坛附件：上传后返回可直接写进 Markdown 的绝对 URL。"""
+
+    url = serializers.SerializerMethodField()
+    uploader = UserBriefSerializer(read_only=True)
+
+    class Meta:
+        model = Attachment
+        fields = (
+            'id',
+            'file',
+            'url',
+            'original_name',
+            'file_ext',
+            'file_size',
+            'is_image',
+            'uploader',
+            'created_at',
+        )
+        # 元信息由后端根据上传文件推导，不接受前端传入
+        read_only_fields = ('original_name', 'file_ext', 'file_size', 'is_image', 'uploader')
+        extra_kwargs = {'file': {'write_only': True}}
+
+    def get_url(self, obj):
+        # 用绝对 URL：前端可能部署在 GitHub Pages（跨域），相对路径会指错站点
+        request = self.context.get('request')
+        url = obj.file.url
+        return request.build_absolute_uri(url) if request else url
+
+    def validate_file(self, value):
+        ext = os.path.splitext(value.name)[1].lower()
+        image_exts = getattr(settings, 'ATTACHMENT_IMAGE_EXTENSIONS', [])
+        file_exts = getattr(settings, 'ATTACHMENT_FILE_EXTENSIONS', [])
+        allowed = image_exts + file_exts
+        if ext not in allowed:
+            raise serializers.ValidationError(
+                f'不支持的文件格式 {ext or "（无扩展名）"}，仅支持：{"、".join(allowed)}'
+            )
+        limit_name = (
+            'ATTACHMENT_MAX_IMAGE_SIZE' if ext in image_exts else 'ATTACHMENT_MAX_FILE_SIZE'
+        )
+        limit = getattr(settings, limit_name, 0)
+        if limit and value.size > limit:
+            raise serializers.ValidationError(f'文件不能超过 {limit / 1024 / 1024:.0f} MB。')
+        return value
+
+    def create(self, validated_data):
+        uploaded = validated_data['file']
+        ext = os.path.splitext(uploaded.name)[1].lower()
+        return Attachment.objects.create(
+            uploader=self.context['request'].user,
+            original_name=uploaded.name,
+            file_ext=ext,
+            file_size=uploaded.size,
+            is_image=ext in getattr(settings, 'ATTACHMENT_IMAGE_EXTENSIONS', []),
+            **validated_data,
+        )
 
 
 class MaterialListSerializer(serializers.ModelSerializer):

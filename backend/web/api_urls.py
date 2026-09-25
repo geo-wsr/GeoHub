@@ -17,6 +17,7 @@ router.register('posts', api.PostViewSet, basename='post')
 router.register('my-topics', api.MyTopicViewSet, basename='my-topic')
 router.register('my-posts', api.MyPostViewSet, basename='my-post')
 router.register('notifications', api.NotificationViewSet, basename='notification')
+router.register('attachments', api.AttachmentViewSet, basename='attachment')
 
 # 认证与个人中心用函数视图，写在 router 之前保证优先匹配
 urlpatterns = [

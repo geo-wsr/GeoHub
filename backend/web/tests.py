@@ -547,3 +547,60 @@ class GitHubOAuthTests(BaseAPITestCase):
         # 生产环境就会是 https://<后端域名>/accounts/github/login/callback/
         redirect_uri = params.get('redirect_uri', [''])[0]
         self.assertIn('/accounts/github/login/callback/', redirect_uri)
+
+
+class AttachmentTests(BaseAPITestCase):
+    """论坛附件上传：需登录、格式与大小校验、只有本人或管理员能删。"""
+
+    def upload(self, name='pic.png', content=b'png-bytes', content_type='image/png'):
+        self.login(self.user)
+        return self.client.post(
+            '/api/attachments/',
+            {'file': SimpleUploadedFile(name, content, content_type=content_type)},
+            format='multipart',
+        )
+
+    def test_anonymous_cannot_upload(self):
+        response = self.client.post(
+            '/api/attachments/',
+            {'file': SimpleUploadedFile('a.png', b'x', content_type='image/png')},
+            format='multipart',
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_upload_image_returns_markdown_ready_url(self):
+        response = self.upload()
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertTrue(data['is_image'])
+        self.assertEqual(data['original_name'], 'pic.png')
+        # 返回绝对 URL，前端才能直接写进 Markdown（跨域部署也不会指错站点）
+        self.assertTrue(data['url'].startswith('http'))
+        self.assertIn('/media/attachments/', data['url'])
+
+    def test_non_image_attachment_is_flagged_as_file(self):
+        response = self.upload(
+            name='notes.pdf', content=b'%PDF-1.4', content_type='application/pdf'
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(response.json()['is_image'])
+
+    def test_svg_and_executable_are_rejected(self):
+        for name in ('evil.svg', 'evil.exe'):
+            response = self.upload(name=name)
+            self.assertEqual(response.status_code, 400, f'{name} 不应被接受')
+
+    def test_oversize_image_is_rejected(self):
+        response = self.upload(content=b'x' * (5 * 1024 * 1024 + 1))
+        self.assertEqual(response.status_code, 400)
+
+    def test_only_owner_or_staff_can_delete(self):
+        attachment_id = self.upload().json()['id']
+        self.login(self.other)
+        self.assertEqual(
+            self.client.delete(f'/api/attachments/{attachment_id}/').status_code, 403
+        )
+        self.login(self.user)
+        self.assertEqual(
+            self.client.delete(f'/api/attachments/{attachment_id}/').status_code, 204
+        )

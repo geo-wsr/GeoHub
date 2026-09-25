@@ -207,6 +207,24 @@ MATERIAL_ALLOWED_EXTENSIONS = [
 ]
 MATERIAL_MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB
 
+# 论坛附件规则：图片与普通附件分开限制
+# 注意：故意**不允许 .svg**——SVG 可以内嵌脚本，是典型的 XSS 载体
+ATTACHMENT_IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.webp']
+ATTACHMENT_FILE_EXTENSIONS = [
+    '.pdf',
+    '.doc',
+    '.docx',
+    '.ppt',
+    '.pptx',
+    '.xls',
+    '.xlsx',
+    '.txt',
+    '.md',
+    '.zip',
+]
+ATTACHMENT_MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 图片 5 MB（服务器带宽有限，图片不宜过大）
+ATTACHMENT_MAX_FILE_SIZE = 20 * 1024 * 1024  # 其他附件 20 MB
+
 
 # Django REST Framework
 REST_FRAMEWORK = {

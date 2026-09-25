@@ -292,6 +292,42 @@ class Post(models.Model):
         return f'#{self.floor or "-"} {self.content[:20]}'
 
 
+def attachment_upload_path(instance, filename):
+    """附件落盘路径：随机名 + 原扩展名，避免重名与路径穿越。"""
+    ext = os.path.splitext(filename)[1].lower()
+    return f'attachments/{uuid.uuid4().hex}{ext}'
+
+
+class Attachment(models.Model):
+    """论坛附件/图片。
+
+    设计取舍：**不建外键**——上传后返回 URL，由 Markdown 正文引用
+    （`![名](url)` / `[名](url)`），这样一条附件可以被多个帖子复用，
+    正文编辑也不会牵连附件表。代价是需要时可另做孤儿文件清理。
+    """
+
+    uploader = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='attachments',
+        verbose_name='上传者',
+    )
+    file = models.FileField('文件', upload_to=attachment_upload_path)
+    original_name = models.CharField('原始文件名', max_length=255, blank=True)
+    file_ext = models.CharField('扩展名', max_length=10, blank=True)
+    file_size = models.PositiveBigIntegerField('文件大小(字节)', default=0)
+    is_image = models.BooleanField('是图片', default=False)
+    created_at = models.DateTimeField('上传时间', auto_now_add=True)
+
+    class Meta:
+        verbose_name = '论坛附件'
+        verbose_name_plural = '论坛附件'
+        ordering = ('-created_at',)
+
+    def __str__(self):
+        return self.original_name or self.file.name
+
+
 # --------------------------------------------------------------------------
 # 审核流水与站内通知
 # --------------------------------------------------------------------------
