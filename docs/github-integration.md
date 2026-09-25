@@ -184,15 +184,20 @@ python manage.py migrate --noinput && gunicorn mywebsite.wsgi:application
 
 ### 3.5 首次初始化（超级管理员 / 演示数据）
 
-Render → 服务 → **Shell**，执行：
+⚠️ **免费实例没有 Web Shell / SSH**（Shell 是 Starter 计划才有的），所以初始化在**本机**
+对着生产库执行。Neon 的连接串从任何地方都能连，本机跑管理命令即可：
 
-```bash
-python manage.py createsuperuser          # 建管理员
-python manage.py seed_data --demo         # 可选：5 分类 + 6 板块 + 示例资料/帖子
+```powershell
+cd D:\mywebsite\backend
+$env:DATABASE_URL='postgresql://…neon.tech/neondb?sslmode=require'   # 粘贴 Neon 连接串
+..\.venv\Scripts\python.exe manage.py seed_data                      # 5 分类 + 6 板块
+..\.venv\Scripts\python.exe manage.py createsuperuser                # 建管理员（交互式）
 ```
 
-> 也可以在本机对着生产库执行（连接串来自 Neon）：
-> `$env:DATABASE_URL='postgresql://…'; .\.venv\Scripts\python.exe manage.py createsuperuser`
+> 变量只在当前终端窗口有效，关掉即失效 —— **不要**把生产 `DATABASE_URL` 写进
+> `backend/.env`，否则本地开发服务器会静默连上生产库。
+> `seed_data` 是幂等的（`update_or_create`），重复执行只会更新不会重复插入；
+> 想连示例资料一起生成用 `seed_data --demo`。
 > 管理员账号请自行保管，**不要**写进仓库或 `AGENTS.md`。
 
 ---

@@ -353,6 +353,9 @@ print([hex(ord(c)) for c in value])
   执行 `collectstatic`、把 `runserver` 换成正式服务器（Render 上用 gunicorn）。
 - 云上所有密钥都放在 **Render 环境变量**或 **GitHub Secrets/Variables** 里
   （`render.yaml` 只写键名，值一律 `sync: false`），仓库里不得出现真实值。
+- **免费实例没有 Web Shell / SSH**（Starter 才有）：生产库的初始化、`createsuperuser`、
+  `seed_data` 这类一次性管理命令，在本机用 `$env:DATABASE_URL='…'` 临时指向 Neon 后执行，
+  关掉终端即失效；别把生产连接串写进 `backend/.env`（settings 会自动加载它，本地开发会连上生产库）。
 - 生产环境不要用 `python manage.py runserver`。
 
 ## 11. GitHub 集成（部署契约）
