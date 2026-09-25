@@ -6,6 +6,10 @@ import { connectionState, markOffline, markOnline } from '@/stores/connection'
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '')
 export const API_ROOT = `${API_BASE_URL}/api`
 
+// 管理后台地址：前端独立部署（GitHub Pages）时后台在后端域名下，
+// 写死成同源的 /admin/ 会跳到不存在的页面，所以跟着 API 地址走。
+export const ADMIN_URL = `${API_BASE_URL}/admin/`
+
 const client = axios.create({
   baseURL: API_ROOT,
   timeout: 30000,

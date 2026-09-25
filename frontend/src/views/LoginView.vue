@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { api, errorMessage } from '@/api'
+import { ADMIN_URL, api, errorMessage } from '@/api'
 import AppIcon from '@/components/AppIcon.vue'
 import { signIn, signUp } from '@/stores/auth'
 import { pushToast } from '@/stores/toast'
@@ -175,7 +175,7 @@ async function submit() {
 
       <p class="login__foot text-small text-muted">
         管理员账号请从
-        <a href="/admin/">后台入口</a>
+        <a :href="ADMIN_URL">后台入口</a>
         登录。
       </p>
     </div>

@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
-import { errorMessage } from '@/api'
+import { ADMIN_URL, errorMessage } from '@/api'
 import { authState, signOut } from '@/stores/auth'
 import { notificationState, refreshUnread } from '@/stores/notification'
 import { pushToast } from '@/stores/toast'
@@ -169,7 +169,7 @@ async function handleLogout() {
               >
                 <AppIcon name="check" :size="16" />资料审核
               </RouterLink>
-              <a v-if="isAdmin" class="user-menu__item" href="/admin/">
+              <a v-if="isAdmin" class="user-menu__item" :href="ADMIN_URL">
                 <AppIcon name="external" :size="16" />Django 后台
               </a>
               <button class="user-menu__item" type="button" @click="handleLogout">

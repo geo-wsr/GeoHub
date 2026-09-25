@@ -4,11 +4,16 @@
       <p class="site-footer__line">mywebsite · 地理学学习资料共享平台</p>
       <p class="site-footer__meta">
         Vue 3 + Vite 前台 · Django REST Framework 后端 ·
-        <a href="/admin/">管理后台</a>
+        <a :href="ADMIN_URL">管理后台</a>
       </p>
     </div>
   </footer>
 </template>
+
+<script setup>
+// 后台地址随 API 域名走，跨域部署（Pages + Render）时不会指错站点
+import { ADMIN_URL } from '@/api'
+</script>
 
 <style scoped>
 .site-footer {
