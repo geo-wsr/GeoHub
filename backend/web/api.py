@@ -239,6 +239,10 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = Tag.objects.annotate(material_count=Count('materials'))
+        # ?category=<slug> 只看某个分类下的标签（上传页与侧栏据此联动）
+        category = self.request.query_params.get('category')
+        if category:
+            qs = qs.filter(category__slug=category)
         # ?hot=8 取被引用最多的标签，用于首页/侧边栏热门标签
         hot = self.request.query_params.get('hot')
         if hot:

@@ -110,7 +110,12 @@ export const api = {
   logout: () => client.post('/auth/logout/').then((r) => r.data),
 
   categories: () => client.get('/categories/').then((r) => r.data),
-  hotTags: (limit = 8) => client.get('/tags/', { params: { hot: limit } }).then((r) => r.data),
+  // 标签：tags() 取全部（可按分类过滤，上传页/侧栏据此联动）
+  tags: (params = {}) => client.get('/tags/', { params }).then((r) => r.data),
+  hotTags: (limit = 8, category = '') =>
+    client
+      .get('/tags/', { params: { hot: limit, ...(category ? { category } : {}) } })
+      .then((r) => r.data),
 
   materials: (params = {}) => client.get('/materials/', { params }).then((r) => r.data),
   material: (id) => client.get(`/materials/${id}/`).then((r) => r.data),

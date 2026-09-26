@@ -1,10 +1,10 @@
 """初始化基础数据：五个资料分类、六个论坛板块、各分类常用标签。
 
 用法：
-    python manage.py seed_data                     # 创建/更新分类、板块与标签
-    python manage.py seed_data --prune-categories  # 额外删除不在清单里的空分类
-    python manage.py seed_data --demo              # 追加三份示例资料
-    python manage.py seed_data --clear-demo        # 删除示例资料（按标记识别）
+    python manage.py seed_data              # 创建/更新分类、板块与标签（带分类归属）
+    python manage.py seed_data --prune      # 额外删除不在清单里的空分类与空板块
+    python manage.py seed_data --demo       # 追加三份示例资料
+    python manage.py seed_data --clear-demo # 删除示例资料（按标记识别）
 """
 
 from django.contrib.auth import get_user_model
@@ -24,36 +24,21 @@ CATEGORIES = [
     ('其他', 'other', '不属于上述分类的资料：工具、模板、杂项等', 5),
 ]
 
-# 标签：全局共用（资料与帖子都可以挂），这里把各分类下的常用标签先建好
-TAGS = [
-    # 自然地理
-    '地质地貌',
-    '气象与气候',
-    '水文',
-    '土壤',
-    '生物',
-    '自然灾害',
-    # 人文地理
-    '经济',
-    '人口',
-    '城市',
-    '交通',
-    # GIS 与遥感
-    '地图学',
-    'GIS',
-    '遥感',
-    # 数理基础
-    '数学',
-    '物理',
-]
+# 标签：归属到各自分类（上传资料时选中分类后只提示该分类下的标签）
+TAGS = {
+    'physical': ['地质地貌', '气象与气候', '水文', '土壤', '生物', '自然灾害'],
+    'human': ['经济', '人口', '城市', '交通'],
+    'gis': ['地图学', 'GIS', '遥感'],
+    'math': ['数学', '物理'],
+}
 
 # 论坛板块：前五个与资料分类对应，外加"学习交流"
 BOARDS = [
-    ('自然地理', 'physical', '地貌、气候、水文、土壤、植被等自然地理话题', 1),
-    ('人文地理', 'human', '人口、城市、经济、文化、旅游等人文地理话题', 2),
-    ('GIS与遥感', 'gis', '地理信息系统、遥感技术、空间分析与专题制图', 3),
-    ('区域地理', 'regional', '中国与世界各区域的地理特征与区域差异', 4),
-    ('地质地貌', 'geology', '地质构造、岩石矿物、地貌演化与地质灾害', 5),
+    ('自然地理', 'physical', '地质地貌、气象与气候、水文、土壤、生物、自然灾害等话题', 1),
+    ('人文地理', 'human', '经济、人口、城市、交通等人文地理话题', 2),
+    ('GIS与遥感', 'gis', '地图学、地理信息系统、遥感技术与专题制图', 3),
+    ('数理基础', 'math', '高等数学、线性代数、概率统计、大学物理等专业基础课', 4),
+    ('其他', 'other', '不属于上述板块的话题：工具、模板、杂项等', 5),
     ('学习交流', 'study', '选课、考研、竞赛、软件使用等学习经验交流', 6),
 ]
 
@@ -168,9 +153,19 @@ class Command(BaseCommand):
         parser.add_argument('--demo', action='store_true', help='同时生成三份示例资料')
         parser.add_argument('--clear-demo', action='store_true', help='删除示例资料')
         parser.add_argument(
+            '--prune',
+            action='store_true',
+            help='删除不在清单里的空分类与空板块（有内容的会被保留并提示）',
+        )
+        parser.add_argument(
             '--prune-categories',
             action='store_true',
             help='删除不在清单里的分类（只删没有任何资料的，避免误伤）',
+        )
+        parser.add_argument(
+            '--prune-boards',
+            action='store_true',
+            help='删除不在清单里的板块（只删没有任何帖子的）',
         )
 
     def handle(self, *args, **options):
@@ -181,8 +176,10 @@ class Command(BaseCommand):
         self.sync_categories()
         self.sync_boards()
         self.sync_tags()
-        if options['prune_categories']:
+        if options['prune'] or options['prune_categories']:
             self.prune_categories()
+        if options['prune'] or options['prune_boards']:
+            self.prune_boards()
         if options['demo']:
             self.create_demo()
 
@@ -198,9 +195,14 @@ class Command(BaseCommand):
 
     def sync_tags(self):
         created_count = 0
-        for name in TAGS:
-            _, created = Tag.objects.get_or_create(name=name)
-            created_count += int(created)
+        for slug, names in TAGS.items():
+            category = Category.objects.filter(slug=slug).first()
+            for name in names:
+                _, created = Tag.objects.update_or_create(
+                    name=name,
+                    defaults={'category': category},
+                )
+                created_count += int(created)
         self.stdout.write(
             self.style.SUCCESS(
                 f'标签就绪：本次新建 {created_count} 个，共 {Tag.objects.count()} 个'
@@ -230,6 +232,26 @@ class Command(BaseCommand):
             )
         if not removed and not kept:
             self.stdout.write('没有需要清理的分类。')
+
+    def prune_boards(self):
+        """删除已不在清单里的论坛板块，同样只删没有帖子的。"""
+        keep = {slug for _, slug, _, _ in BOARDS}
+        removed, kept = [], []
+        for board in ForumBoard.objects.exclude(slug__in=keep):
+            count = board.topics.count()
+            if count:
+                kept.append(f'{board.name}（{count} 个帖子）')
+                continue
+            removed.append(board.name)
+            board.delete()
+        if removed:
+            self.stdout.write(self.style.WARNING(f'已删除空板块：{"、".join(removed)}'))
+        if kept:
+            self.stdout.write(
+                self.style.WARNING(f'这些板块还有帖子，已保留：{"、".join(kept)}')
+            )
+        if not removed and not kept:
+            self.stdout.write('没有需要清理的板块。')
 
     def sync_boards(self):
         for name, slug, description, order in BOARDS:

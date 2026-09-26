@@ -41,13 +41,12 @@ const SLIDES = [
     bg: 'linear-gradient(135deg, var(--color-accent-soft), var(--bg-card) 62%)',
   },
   {
-    key: 'geology',
-    eyebrow: '地质地貌',
-    title: '读懂岩层里的时间',
-    desc: '地质构造、岩石矿物、地貌演化与地质灾害，剖面图与野外记录一网打尽。',
-    cta: '查看地质地貌资料',
-    // 「地质地貌」现在是自然地理下的标签，所以按 分类 + 标签 组合筛选
-    query: { category: 'physical', tag: '地质地貌' },
+    key: 'math',
+    eyebrow: '数理基础',
+    title: '把公式用在地图上',
+    desc: '高等数学、线性代数、概率统计、大学物理 —— 地学专业的数理地基，例题与习题解析都在这。',
+    cta: '查看数理基础资料',
+    query: { category: 'math' },
     bg: 'linear-gradient(135deg, var(--bg-hover), var(--bg-card) 62%)',
   },
 ]
@@ -154,7 +153,7 @@ onBeforeUnmount(() => {
           </RouterLink>
         </div>
 
-        <!-- 内联矢量插画：等高线山体 / 遥感网格 / 城市与人口 / 岩层剖面 -->
+        <!-- 内联矢量插画：等高线山体 / 遥感网格 / 城市与人口 / 坐标系与曲线 -->
         <div class="hero__art" aria-hidden="true">
           <svg v-if="slide.key === 'relief'" viewBox="0 0 320 220" fill="none">
             <circle cx="248" cy="54" r="26" fill="var(--color-accent-soft)" />
@@ -269,34 +268,33 @@ onBeforeUnmount(() => {
           </svg>
 
           <svg v-else viewBox="0 0 320 220" fill="none">
-            <path
-              d="M0 56 C70 30 110 86 180 60 C240 38 280 74 320 56 L320 220 L0 220 Z"
-              fill="var(--color-primary)"
-              opacity="0.12"
-            />
-            <g stroke-width="1.6">
-              <path d="M0 96 C70 72 110 124 180 100 C240 80 280 112 320 96" stroke="var(--color-primary)" />
-              <path
-                d="M0 128 C70 104 110 156 180 132 C240 112 280 144 320 128"
-                stroke="var(--color-secondary)"
-                opacity="0.8"
-              />
-              <path
-                d="M0 160 C70 136 110 188 180 164 C240 144 280 176 320 160"
-                stroke="var(--color-accent)"
-                opacity="0.85"
-              />
+            <g stroke="var(--color-secondary)" stroke-width="1" opacity="0.28">
+              <path d="M52 44 H296 M52 76 H296 M52 108 H296 M52 140 H296 M52 172 H296" />
+              <path d="M84 28 V192 M116 28 V192 M148 28 V192 M180 28 V192 M212 28 V192 M244 28 V192 M276 28 V192" />
             </g>
+            <path d="M52 192 H300" stroke="var(--color-primary)" stroke-width="1.8" />
+            <path d="M52 196 V30" stroke="var(--color-primary)" stroke-width="1.8" />
+            <path d="M300 192 l-9 -4 v8 z" fill="var(--color-primary)" />
+            <path d="M52 30 l-4 9 h8 z" fill="var(--color-primary)" />
             <path
-              d="M196 40 L214 178"
+              d="M52 166 C 92 62 128 58 164 116 S 244 178 292 84"
               stroke="var(--color-accent)"
-              stroke-width="2"
-              stroke-dasharray="7 5"
+              stroke-width="2.2"
+              stroke-linecap="round"
             />
-            <g transform="translate(84 120)" stroke="var(--color-primary)" stroke-width="1.4">
-              <circle cx="0" cy="0" r="14" />
-              <circle cx="0" cy="0" r="9" />
-              <circle cx="0" cy="0" r="4" />
+            <path
+              d="M52 186 L292 62"
+              stroke="var(--color-secondary)"
+              stroke-width="1.4"
+              stroke-dasharray="6 5"
+              opacity="0.75"
+            />
+            <g fill="var(--color-accent)">
+              <circle cx="92" cy="132" r="3.4" />
+              <circle cx="140" cy="104" r="3.4" />
+              <circle cx="188" cy="120" r="3.4" />
+              <circle cx="236" cy="112" r="3.4" />
+              <circle cx="276" cy="92" r="3.4" />
             </g>
           </svg>
         </div>

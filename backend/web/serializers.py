@@ -98,9 +98,13 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    category_slug = serializers.CharField(
+        source='category.slug', default='', read_only=True
+    )
+
     class Meta:
         model = Tag
-        fields = ('id', 'name')
+        fields = ('id', 'name', 'category', 'category_slug')
 
 
 def split_tag_names(tag_names):

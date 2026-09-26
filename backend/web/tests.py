@@ -22,6 +22,7 @@ from .models import (
     Notification,
     Post,
     ReviewLog,
+    Tag,
     Topic,
 )
 
@@ -604,6 +605,27 @@ class AttachmentTests(BaseAPITestCase):
         self.assertEqual(
             self.client.delete(f'/api/attachments/{attachment_id}/').status_code, 204
         )
+
+
+class TagCategoryTests(BaseAPITestCase):
+    """标签按分类过滤：上传页与资料库侧栏据此联动。"""
+
+    def setUp(self):
+        super().setUp()
+        self.gis = Category.objects.create(name='GIS遥感', slug='gis', order=2)
+        Tag.objects.create(name='遥感', category=self.gis)
+        Tag.objects.create(name='地图学', category=self.gis)
+        Tag.objects.create(name='水文', category=self.category)
+
+    def test_filter_by_category(self):
+        data = self.client.get('/api/tags/?category=gis').json()
+        self.assertEqual(sorted(item['name'] for item in data), ['地图学', '遥感'])
+        self.assertTrue(all(item['category_slug'] == 'gis' for item in data))
+
+    def test_without_filter_returns_everything(self):
+        names = [item['name'] for item in self.client.get('/api/tags/').json()]
+        self.assertIn('水文', names)
+        self.assertIn('遥感', names)
 
 
 class AvatarTests(BaseAPITestCase):

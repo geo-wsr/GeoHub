@@ -22,6 +22,8 @@ const ORDERINGS = [
 
 const categories = ref([])
 const materials = ref([])
+// 侧栏标签：跟着当前分类走（选中「GIS遥感」就只列它下面的标签）
+const sideTags = ref([])
 const total = ref(0)
 const loading = ref(true)
 
@@ -76,10 +78,24 @@ function resetFilters() {
   router.push({ name: 'materials' })
 }
 
+/** 侧栏标签：没选分类时列出全部（截断），选了分类就只列该分类下的标签 */
+async function loadSideTags() {
+  try {
+    const list = currentCategory.value
+      ? await api.tags({ category: currentCategory.value })
+      : await api.tags()
+    sideTags.value = list.slice(0, 16)
+  } catch {
+    sideTags.value = []
+  }
+}
+
 watch(
   () => route.query,
   () => load(),
 )
+
+watch(currentCategory, loadSideTags)
 
 onMounted(async () => {
   try {
@@ -87,6 +103,7 @@ onMounted(async () => {
   } catch {
     categories.value = []
   }
+  loadSideTags()
   load()
 })
 </script>
@@ -165,6 +182,28 @@ onMounted(async () => {
             </button>
           </li>
         </ul>
+
+        <!-- 标签：跟当前分类联动，点一下按标签筛选（保留分类条件） -->
+        <div v-if="sideTags.length" class="filter__tags">
+          <h4 class="filter__subtitle">
+            标签
+            <span v-if="activeCategoryName" class="filter__subtitle-hint">
+              · {{ activeCategoryName }}
+            </span>
+          </h4>
+          <div class="filter__tags-row">
+            <button
+              v-for="item in sideTags"
+              :key="item.id"
+              class="pill pill--ghost filter__tag"
+              :class="{ 'is-active': currentTag === item.name }"
+              type="button"
+              @click="updateQuery({ tag: item.name, page: undefined })"
+            >
+              {{ item.name }}
+            </button>
+          </div>
+        </div>
       </aside>
 
       <!-- 右侧资料卡片网格：一行 4 个 -->
@@ -284,6 +323,48 @@ onMounted(async () => {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.filter__tags {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.filter__subtitle {
+  margin: 0 0 8px;
+  color: var(--text-3);
+  font-size: var(--fs-small);
+  font-weight: var(--fw-medium);
+}
+
+.filter__subtitle-hint {
+  color: var(--color-primary);
+}
+
+.filter__tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filter__tag {
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  transition: background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+
+.filter__tag:hover {
+  background: var(--bg-hover);
+  color: var(--color-primary);
+}
+
+.filter__tag.is-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 
 .filter__item {

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { api, errorMessage } from '@/api'
@@ -25,6 +25,8 @@ const isEditing = computed(() => Boolean(editId.value))
 const categories = ref([])
 const categoriesError = ref('')
 const form = ref({ title: '', category: '', description: '', tags: '' })
+// 常用标签：按所选分类拉取，点一下追加到标签输入框
+const tagSuggestions = ref([])
 const file = ref(null)
 const dragging = ref(false)
 const errors = ref({})
@@ -125,6 +127,32 @@ async function loadCategories() {
   }
 }
 
+/** 常用标签跟着分类走：选中分类 → 拉该分类下的标签 */
+async function loadTagSuggestions() {
+  const category = categories.value.find((item) => String(item.id) === form.value.category)
+  if (!category) {
+    tagSuggestions.value = []
+    return
+  }
+  try {
+    tagSuggestions.value = await api.tags({ category: category.slug })
+  } catch {
+    tagSuggestions.value = []
+  }
+}
+
+/** 点常用标签 → 追加到输入框（已存在就不重复加） */
+function pickTag(name) {
+  const current = form.value.tags
+    .split(/[,，]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+  if (current.includes(name)) return
+  form.value.tags = [...current, name].join(', ')
+}
+
+watch(() => form.value.category, loadTagSuggestions)
+
 onMounted(async () => {
   await loadCategories()
 
@@ -206,6 +234,19 @@ onMounted(async () => {
           type="text"
           placeholder="用逗号分隔，例如：气候, 地貌, 复习"
         />
+        <!-- 常用标签：随所选分类变化，点一下加进输入框 -->
+        <div v-if="tagSuggestions.length" class="tag-picks">
+          <span class="tag-picks__label">常用：</span>
+          <button
+            v-for="item in tagSuggestions"
+            :key="item.id"
+            class="pill pill--ghost tag-picks__item"
+            type="button"
+            @click="pickTag(item.name)"
+          >
+            {{ item.name }}
+          </button>
+        </div>
         <span class="field__hint">最多展示 3 个标签，建议 2–4 个关键词。</span>
       </label>
 
@@ -272,6 +313,32 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.tag-picks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.tag-picks__label {
+  color: var(--text-3);
+  font-size: var(--fs-small);
+}
+
+.tag-picks__item {
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  transition: background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+
+.tag-picks__item:hover {
+  background: var(--bg-hover);
+  color: var(--color-primary);
+}
+
 .upload {
   padding-top: 24px;
   padding-bottom: 24px;

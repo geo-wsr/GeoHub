@@ -13,6 +13,8 @@ import { categoryIcon } from '@/utils/format'
 
 const categories = ref([])
 const hotTags = ref([])
+// 分类 → 该分类下的标签，用于首页侧栏「分类 + 标签」两级导航
+const categoryTags = ref({})
 const hotMaterials = ref([])
 const latestMaterials = ref([])
 const hotTopics = ref([])
@@ -48,15 +50,23 @@ const totalMaterials = computed(() =>
 
 onMounted(async () => {
   try {
-    const [categoryList, tagList, hot, latest, topics] = await Promise.all([
+    const [categoryList, tagList, allTags, hot, latest, topics] = await Promise.all([
       api.categories(),
       api.hotTags(10),
+      api.tags(),
       api.hotMaterials(),
       api.latestMaterials(),
       api.topics({ ordering: 'hot', page_size: 5 }),
     ])
     categories.value = categoryList
-    hotTags.value = tagList
+    // 热门标签在冷启动期/新站可能为空，这时回落到全部标签（按分类整理过的那批）
+    hotTags.value = tagList.length ? tagList : allTags.slice(0, 12)
+    categoryTags.value = allTags.reduce((acc, tag) => {
+      if (tag.category_slug) {
+        acc[tag.category_slug] = [...(acc[tag.category_slug] || []), tag]
+      }
+      return acc
+    }, {})
     hotMaterials.value = hot
     latestMaterials.value = latest
     hotTopics.value = Array.isArray(topics) ? topics : topics.results
@@ -203,6 +213,17 @@ onMounted(async () => {
                 <span class="cat-list__name">{{ item.name }}</span>
                 <span class="cat-list__count num">{{ item.material_count }}</span>
               </RouterLink>
+              <!-- 分类下的常用标签，点进去直接带上「分类 + 标签」两个条件 -->
+              <div v-if="categoryTags[item.slug]?.length" class="cat-list__tags">
+                <RouterLink
+                  v-for="tag in categoryTags[item.slug].slice(0, 6)"
+                  :key="tag.id"
+                  class="cat-list__tag"
+                  :to="{ name: 'materials', query: { category: item.slug, tag: tag.name } }"
+                >
+                  {{ tag.name }}
+                </RouterLink>
+              </div>
             </li>
           </ul>
         </div>
@@ -374,6 +395,30 @@ onMounted(async () => {
 .cat-list__item:hover {
   background: var(--bg-hover);
   color: var(--color-primary);
+  text-decoration: none;
+}
+
+/* 分类下的标签：小一号、浅色，点进去带上「分类 + 标签」两个筛选条件 */
+.cat-list__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 2px 0 6px 34px;
+}
+
+.cat-list__tag {
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 12px;
+  line-height: 1.6;
+  text-decoration: none;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.cat-list__tag:hover {
+  background: var(--bg-hover);
   text-decoration: none;
 }
 

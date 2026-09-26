@@ -36,6 +36,16 @@ class Category(models.Model):
 
 class Tag(models.Model):
     name = models.CharField('名称', max_length=30, unique=True)
+    # 归属分类：上传/筛选时「选中某分类只显示它下面的标签」靠这个字段；
+    # 为空表示通用标签（历史数据与用户自建标签都落在这里）
+    category = models.ForeignKey(
+        'Category',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='tags',
+        verbose_name='所属分类',
+    )
 
     class Meta:
         verbose_name = '标签'
