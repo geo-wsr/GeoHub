@@ -344,6 +344,10 @@ print([hex(ord(c)) for c in value])
   `frontend/public/materials/`（随前端发布，Pages 直链，单文件建议 ≤50MB），
   在「上传资料 → 资料形式 → 外链地址」登记；走 CDN 不占对象存储，下载量照常统计。
   适合"管理员定稿、下载量大"的资料；用户上传/需审核的仍走上传流程
+- **换对象存储商**：`manage.py copy_storage`（读 `SRC_S3_*` / `DST_S3_*` 两组环境变量，
+  支持 `--dry-run` / `--prefix` / `--overwrite`）。数据库里存的是相对路径，
+  只要新桶有同名对象、Render 的 `AWS_*` 指向新桶就无缝切换；
+  但论坛正文里的图片是**绝对 URL**，换桶后仍指向旧桶 —— 删旧桶前务必先批量改正文
 - **第三方登录现状**：GitHub OAuth 已接线（配 `GITHUB_CLIENT_ID`/`SECRET` 即生效）；
   **微信登录没做**——微信开放平台的网站应用要求企业主体 + 已备案域名（个人开发者无法申请），
   与本项目"免备案境外托管"的定位冲突，详见 `docs/github-integration.md` 第 2 节

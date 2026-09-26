@@ -170,6 +170,41 @@ R2 激活订阅时要求绑定付款方式（信用卡），没有卡就换 Supa
 > 注意 Supabase 控制台依赖 `api.supabase.com`，在 Codex 应用内浏览器里会被策略拦截，
 > 这一步请用系统自带浏览器（Edge / Chrome）操作。
 
+#### 备选 2：Filebase（5 GB 免费、**无需信用卡**、S3 兼容）
+
+Supabase 免费只有 1 GB，想再宽裕一点、又不想绑卡时用它：
+
+1. <https://console.filebase.com/> 注册（官方文档写明 **No credit card required**）
+2. **Buckets → Create Bucket**：名字 `geohub-media`，**Access level 选 Public**
+   （私有桶的话网页里的图片打不开）
+3. **Access Keys → Create Access Key**，记下 Key 与 Secret
+4. Render 里把这几个变量换成 Filebase 的值（其余不用动）：
+
+| 变量 | 值 |
+| --- | --- |
+| `AWS_S3_ENDPOINT_URL` | `https://s3.filebase.io` |
+| `AWS_S3_REGION_NAME` | `auto` |
+| `AWS_STORAGE_BUCKET_NAME` | `geohub-media`（你自己的桶名） |
+| `AWS_S3_CUSTOM_DOMAIN` | `<桶名>.s3.filebase.io` |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | 第 3 步生成的密钥 |
+
+**把存量文件搬过去**（数据库里存的是相对路径，只要新桶有同名对象就无缝切换）：
+
+```powershell
+cd D:\mywebsite\backend
+# 源 = 现在的存储（Supabase），目标 = Filebase，各 5 个变量
+$env:SRC_S3_ENDPOINT='https://<ref>.supabase.co/storage/v1/s3'; $env:SRC_S3_REGION='ap-southeast-1'
+$env:SRC_S3_BUCKET='geohub-media'; $env:SRC_S3_KEY='...'; $env:SRC_S3_SECRET='...'
+$env:DST_S3_ENDPOINT='https://s3.filebase.io'; $env:DST_S3_REGION='auto'
+$env:DST_S3_BUCKET='geohub-media'; $env:DST_S3_KEY='...'; $env:DST_S3_SECRET='...'
+..\.venv\Scripts\python.exe manage.py copy_storage --dry-run   # 先预演
+..\.venv\Scripts\python.exe manage.py copy_storage             # 真搬
+```
+
+> ⚠️ 论坛帖子/评论里插过的图片是**绝对 URL**（写着旧桶域名）。换桶后这些老图片仍指向旧桶 ——
+> 所以**先别删旧桶**（保留即可继续显示）；确实要删，就用脚本把正文里的旧域名批量替换成新的。
+> 站内资料不受影响：它们存的是相对路径，换桶即生效。
+
 ### 3.3 Render（Django 后端）
 
 1. 注册 <https://render.com>（用 GitHub 账号登录）
