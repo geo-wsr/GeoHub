@@ -146,6 +146,19 @@ export const api = {
   deleteComment: (commentId) => client.delete(`/comments/${commentId}/`),
 
   profile: () => client.get('/profile/').then((r) => r.data),
+  // 头像：上传走 multipart，返回最新用户信息；删除后回落成首字母占位图
+  uploadAvatar: async (file, onUploadProgress) => {
+    const form = new FormData()
+    form.append('file', file)
+    await ensureAwake()
+    const r = await client.post('/profile/avatar/', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress,
+      timeout: 60000,
+    })
+    return r.data
+  },
+  removeAvatar: () => client.delete('/profile/avatar/').then((r) => r.data),
   favorites: (params = {}) => client.get('/favorites/', { params }).then((r) => r.data),
   myComments: (params = {}) => client.get('/my-comments/', { params }).then((r) => r.data),
   downloads: (params = {}) => client.get('/downloads/', { params }).then((r) => r.data),

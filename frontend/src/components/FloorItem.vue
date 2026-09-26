@@ -55,7 +55,11 @@ async function saveEdit(item) {
 <template>
   <article class="floor">
     <div class="floor__side">
-      <UserAvatar :name="post.author?.display_name" :size="32" />
+        <UserAvatar
+          :name="post.author?.display_name"
+          :src="post.author?.avatar_url"
+          :size="32"
+        />
       <span v-if="post.floor" class="floor__no num">{{ post.floor }} 楼</span>
     </div>
 
@@ -107,7 +111,11 @@ async function saveEdit(item) {
       <!-- 二级回复 -->
       <ul v-if="post.replies?.length" class="subfloors">
         <li v-for="reply in post.replies" :key="reply.id" class="subfloor">
-          <UserAvatar :name="reply.author?.display_name" :size="26" />
+            <UserAvatar
+              :name="reply.author?.display_name"
+              :src="reply.author?.avatar_url"
+              :size="26"
+            />
           <div class="subfloor__body">
             <div class="floor__meta">
               <span class="floor__author">{{ reply.author?.display_name }}</span>

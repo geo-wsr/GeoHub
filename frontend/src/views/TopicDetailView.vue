@@ -233,7 +233,11 @@ watch(() => props.id, loadTopic, { immediate: true })
           </h1>
 
           <div class="topic__meta">
-            <UserAvatar :name="topic.author?.display_name" :size="26" />
+            <UserAvatar
+              :name="topic.author?.display_name"
+              :src="topic.author?.avatar_url"
+              :size="26"
+            />
             <span class="topic__author">{{ topic.author?.display_name }}</span>
             <time>{{ formatDate(topic.created_at) }}</time>
             <span class="topic__stat">
@@ -322,7 +326,11 @@ watch(() => props.id, loadTopic, { immediate: true })
         <div class="card side-block">
           <h3 class="side-block__title">作者</h3>
           <div class="author">
-            <UserAvatar :name="topic.author?.display_name" :size="44" />
+          <UserAvatar
+            :name="topic.author?.display_name"
+            :src="topic.author?.avatar_url"
+            :size="44"
+          />
             <div>
               <p class="author__name">{{ topic.author?.display_name }}</p>
               <p class="author__account text-small text-muted">@{{ topic.author?.username }}</p>

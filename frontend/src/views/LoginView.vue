@@ -34,7 +34,8 @@ onMounted(async () => {
   }
 })
 
-const mode = ref('login')
+// 支持 /login?mode=register 直接落到注册页（首页的登录引导弹窗会这样跳）
+const mode = ref(route.query.mode === 'register' ? 'register' : 'login')
 const submitting = ref(false)
 const error = ref('')
 

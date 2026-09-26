@@ -29,3 +29,5 @@ python-dateutil==2.9.0.post0
 six==1.17.0
 # 静态文件：生产环境由 WhiteNoise 托管（后台/SimpleUI 样式）
 whitenoise==6.12.0
+# 头像用 ImageField，Django 需要 Pillow 才能校验图片
+Pillow==11.3.0

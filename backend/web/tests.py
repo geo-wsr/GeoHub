@@ -604,3 +604,43 @@ class AttachmentTests(BaseAPITestCase):
         self.assertEqual(
             self.client.delete(f'/api/attachments/{attachment_id}/').status_code, 204
         )
+
+
+class AvatarTests(BaseAPITestCase):
+    """自定义头像：登录才能改、格式与大小受限、删除后回落成占位图。"""
+
+    URL = '/api/profile/avatar/'
+
+    def upload(self, name='avatar.png', content=b'x' * 1024):
+        image = SimpleUploadedFile(name, content, content_type='image/png')
+        return self.client.post(self.URL, {'file': image}, format='multipart')
+
+    def test_anonymous_cannot_upload(self):
+        self.logout()
+        self.assertEqual(self.upload().status_code, 403)
+
+    def test_upload_and_delete_avatar(self):
+        self.login(self.user)
+        response = self.upload()
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.json()['user']['avatar_url'])
+
+        # 评论 / 帖子里的用户摘要同样带上头像
+        Comment.objects.create(
+            material=self.approved, author=self.user, content='顶一个'
+        )
+        comments = self.client.get(f'/api/materials/{self.approved.id}/comments/')
+        self.assertTrue(comments.json()['results'][0]['author']['avatar_url'])
+
+        deleted = self.client.delete(self.URL)
+        self.assertEqual(deleted.status_code, 200)
+        self.assertEqual(deleted.json()['user']['avatar_url'], '')
+
+    def test_rejects_wrong_extension(self):
+        self.login(self.user)
+        self.assertEqual(self.upload(name='avatar.svg').status_code, 400)
+
+    def test_rejects_oversize_avatar(self):
+        self.login(self.user)
+        big = b'x' * (2 * 1024 * 1024 + 1)
+        self.assertEqual(self.upload(content=big).status_code, 400)

@@ -13,6 +13,7 @@ from .models import (
     ReviewLog,
     Tag,
     Topic,
+    UserProfile,
 )
 
 
@@ -156,3 +157,12 @@ class AttachmentAdmin(admin.ModelAdmin):
     list_filter = ('is_image', 'file_ext', 'created_at')
     search_fields = ('original_name', 'uploader__username')
     date_hierarchy = 'created_at'
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    """用户资料（目前只有自定义头像），方便在后台直接清掉不当头像。"""
+
+    list_display = ('user', 'avatar', 'updated_at')
+    search_fields = ('user__username', 'user__email')
+    raw_id_fields = ('user',)

@@ -6,6 +6,7 @@ import { api } from '@/api'
 import AppFooter from '@/components/AppFooter.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import ConnectionBanner from '@/components/ConnectionBanner.vue'
+import LoginPrompt from '@/components/LoginPrompt.vue'
 import ToastHost from '@/components/ToastHost.vue'
 import { loadCurrentUser } from '@/stores/auth'
 
@@ -54,6 +55,8 @@ onMounted(async () => {
 
     <AppFooter />
     <ToastHost />
+    <!-- 进站登录引导：游客首次访问时弹出，可关闭，不影响浏览 -->
+    <LoginPrompt />
   </div>
 </template>
 

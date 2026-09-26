@@ -11,6 +11,12 @@ def material_upload_path(instance, filename):
     return f'materials/{uuid.uuid4().hex}{ext}'
 
 
+def avatar_upload_path(instance, filename):
+    """头像落盘路径：同样用随机名，避免重名与中文/特殊字符。"""
+    ext = os.path.splitext(filename)[1].lower() or '.png'
+    return f'avatars/{uuid.uuid4().hex}{ext}'
+
+
 class Category(models.Model):
     """资料分类。slug 用 ASCII，前端据此映射线性图标。"""
 
@@ -407,3 +413,32 @@ class Notification(models.Model):
 
     def __str__(self):
         return f'{self.recipient} · {self.get_kind_display()}'
+
+
+class UserProfile(models.Model):
+    """用户扩展信息：目前只存自定义头像。
+
+    Django 自带的 User 表没有头像字段，用一对一扩展表挂上去，
+    不动 auth 表结构（也方便以后加签名、主页等字段）。
+    """
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='profile',
+        verbose_name='用户',
+    )
+    avatar = models.ImageField(
+        '头像',
+        upload_to=avatar_upload_path,
+        blank=True,
+        null=True,
+    )
+    updated_at = models.DateTimeField('更新时间', auto_now=True)
+
+    class Meta:
+        verbose_name = '用户资料'
+        verbose_name_plural = '用户资料'
+
+    def __str__(self):
+        return f'{self.user} 的资料'

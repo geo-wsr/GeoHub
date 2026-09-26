@@ -31,10 +31,16 @@ export async function signIn(payload) {
 
 export async function signUp(payload) {
   const data = await api.register(payload)
-  authState.user = data.user
-  authState.loaded = true
+  applyUser(data.user)
   await api.ensureCsrf()
   return data.user
+}
+
+/** 用后端返回的最新用户信息覆盖本地状态（改头像/昵称后用）。 */
+export function applyUser(user) {
+  authState.user = user
+  authState.loaded = true
+  return user
 }
 
 export async function signOut() {

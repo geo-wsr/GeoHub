@@ -185,7 +185,11 @@ defineExpose({ load })
 
     <ul v-else class="comments__list">
       <li v-for="item in comments" :key="item.id" class="comment">
-        <UserAvatar :name="item.author.display_name" :size="32" />
+        <UserAvatar
+          :name="item.author.display_name"
+          :src="item.author.avatar_url"
+          :size="32"
+        />
         <div class="comment__body">
           <div class="comment__meta">
             <span class="comment__author">{{ item.author.display_name }}</span>
@@ -234,7 +238,11 @@ defineExpose({ load })
           <!-- 二级回复：缩进 24px，字号小一号，底色比卡片浅一层 -->
           <ul v-if="item.replies?.length" class="replies">
             <li v-for="reply in item.replies" :key="reply.id" class="reply">
-              <UserAvatar :name="reply.author.display_name" :size="26" />
+              <UserAvatar
+                :name="reply.author.display_name"
+                :src="reply.author.avatar_url"
+                :size="26"
+              />
               <div class="reply__body">
                 <div class="comment__meta">
                   <span class="comment__author">{{ reply.author.display_name }}</span>

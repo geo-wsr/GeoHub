@@ -15,10 +15,12 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import (
     action,
     api_view,
+    parser_classes,
     permission_classes,
     throttle_classes,
 )
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import (
     AllowAny,
     IsAdminUser,
@@ -40,6 +42,7 @@ from .models import (
     ReviewLog,
     Tag,
     Topic,
+    UserProfile,
 )
 from .serializers import (
     AttachmentSerializer,
@@ -678,6 +681,58 @@ class DownloadRecordViewSet(FavoritedIdsContextMixin, viewsets.ReadOnlyModelView
             .select_related('material__category', 'material__uploader')
             .prefetch_related('material__tags')
         )
+
+
+# —— 用户头像 ——
+# 限制与前端一致：常见图片格式 + 2 MB 以内，避免有人传超大图把存储撑爆
+AVATAR_MAX_BYTES = 2 * 1024 * 1024
+AVATAR_ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
+
+
+@api_view(['POST', 'DELETE'])
+@permission_classes([IsAuthenticated])
+@throttle_classes([UploadRateThrottle])
+@parser_classes([MultiPartParser, FormParser])
+def profile_avatar_view(request):
+    """上传 / 删除自己的头像。
+
+    POST：multipart 里带 `file` 字段（图片）
+    DELETE：清空头像并删除已存文件
+    两种情况都返回最新的用户信息，前端直接替换本地状态即可。
+    """
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    # 把同一个实例挂回 request.user，避免序列化时读到缓存里的旧 profile
+    request.user.profile = profile
+
+    if request.method == 'DELETE':
+        if profile.avatar:
+            profile.avatar.delete(save=True)
+        return Response(
+            {'user': CurrentUserSerializer(request.user, context={'request': request}).data}
+        )
+
+    upload = request.FILES.get('file')
+    if not upload:
+        return Response({'detail': '请选择要上传的图片。'}, status=status.HTTP_400_BAD_REQUEST)
+
+    ext = os.path.splitext(upload.name)[1].lower()
+    if ext not in AVATAR_ALLOWED_EXTENSIONS:
+        return Response(
+            {'detail': '头像只支持 JPG / PNG / WebP / GIF 格式。'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if upload.size > AVATAR_MAX_BYTES:
+        return Response(
+            {'detail': '头像不能超过 2 MB。'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    profile.avatar = upload
+    profile.save()
+    return Response(
+        {'user': CurrentUserSerializer(request.user, context={'request': request}).data},
+        status=status.HTTP_201_CREATED,
+    )
 
 
 @api_view(['GET'])

@@ -11,13 +11,60 @@ import SkeletonCard from '@/components/SkeletonCard.vue'
 import StatusPill from '@/components/StatusPill.vue'
 import TopicCard from '@/components/TopicCard.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
-import { authState } from '@/stores/auth'
+import { applyUser, authState } from '@/stores/auth'
 import { refreshUnread } from '@/stores/notification'
 import { pushToast } from '@/stores/toast'
 import { formatDate, formatSize } from '@/utils/format'
 
 const route = useRoute()
 const PAGE_SIZE = 8
+
+// —— 头像 ——
+// 前端也拦一道大小/格式，避免把明显不合规的文件传到后端再被打回
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024
+const avatarInput = ref(null)
+const avatarBusy = ref(false)
+const avatarProgress = ref(0)
+
+function pickAvatar() {
+  avatarInput.value?.click()
+}
+
+async function onAvatarChange(event) {
+  const file = event.target.files?.[0]
+  event.target.value = '' // 允许连续选同一个文件
+  if (!file) return
+  if (file.size > AVATAR_MAX_BYTES) {
+    pushToast('头像不能超过 2 MB', 'error')
+    return
+  }
+  avatarBusy.value = true
+  avatarProgress.value = 0
+  try {
+    const data = await api.uploadAvatar(file, (e) => {
+      if (e.total) avatarProgress.value = Math.round((e.loaded / e.total) * 100)
+    })
+    applyUser(data.user)
+    pushToast('头像已更新', 'success')
+  } catch (error) {
+    pushToast(errorMessage(error), 'error')
+  } finally {
+    avatarBusy.value = false
+  }
+}
+
+async function removeAvatar() {
+  avatarBusy.value = true
+  try {
+    const data = await api.removeAvatar()
+    applyUser(data.user)
+    pushToast('已恢复默认头像', 'success')
+  } catch (error) {
+    pushToast(errorMessage(error), 'error')
+  } finally {
+    avatarBusy.value = false
+  }
+}
 
 // 我的上传 / 收藏 / 帖子 / 回复 / 评论 / 下载记录
 const TABS = [
@@ -142,7 +189,40 @@ onMounted(() => {
   <div class="container profile">
     <!-- 用户信息 -->
     <section class="card profile__head">
-      <UserAvatar :name="authState.user?.display_name" :size="56" />
+      <div class="profile__avatar">
+        <UserAvatar
+          :name="authState.user?.display_name"
+          :src="authState.user?.avatar_url"
+          :size="56"
+        />
+        <div class="profile__avatar-actions">
+          <button
+            class="btn btn--secondary btn--sm"
+            type="button"
+            :disabled="avatarBusy"
+            @click="pickAvatar"
+          >
+            <AppIcon name="upload" :size="14" />
+            {{ avatarBusy ? `上传中 ${avatarProgress}%` : '更换头像' }}
+          </button>
+          <button
+            v-if="authState.user?.avatar_url"
+            class="btn btn--text btn--sm"
+            type="button"
+            :disabled="avatarBusy"
+            @click="removeAvatar"
+          >
+            移除
+          </button>
+        </div>
+        <input
+          ref="avatarInput"
+          class="profile__avatar-input"
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          @change="onAvatarChange"
+        />
+      </div>
       <div class="profile__identity">
         <h1 class="profile__name">
           {{ authState.user?.display_name }}
@@ -354,6 +434,25 @@ onMounted(() => {
   align-items: center;
   gap: 16px;
   padding: 24px;
+}
+
+.profile__avatar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.profile__avatar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 用隐藏的原生 file input 触发选择，按钮样式统一走设计系统 */
+.profile__avatar-input {
+  display: none;
 }
 
 .profile__identity {

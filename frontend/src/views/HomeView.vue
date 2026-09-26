@@ -5,6 +5,7 @@ import { RouterLink } from 'vue-router'
 import { api } from '@/api'
 import AppIcon from '@/components/AppIcon.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import HeroCarousel from '@/components/HeroCarousel.vue'
 import MaterialCard from '@/components/MaterialCard.vue'
 import SkeletonCard from '@/components/SkeletonCard.vue'
 import TopicCard from '@/components/TopicCard.vue'
@@ -16,6 +17,30 @@ const hotMaterials = ref([])
 const latestMaterials = ref([])
 const hotTopics = ref([])
 const loading = ref(true)
+
+// 网站介绍里的功能点：都是已经实现的能力，不写没做的
+const FEATURES = [
+  {
+    icon: 'upload',
+    title: '资料共享与审核',
+    desc: 'PDF / Word / PPT 一键上传，管理员审核通过后公开，支持分类、标签与全文检索。',
+  },
+  {
+    icon: 'comment',
+    title: '论坛与楼层回复',
+    desc: '按六个地学板块发帖讨论，支持 Markdown、二级回复、置顶加精与站内通知。',
+  },
+  {
+    icon: 'heart',
+    title: '收藏与个人中心',
+    desc: '收藏资料、管理自己的上传与评论、查看下载记录，进度一目了然。',
+  },
+  {
+    icon: 'globe',
+    title: '深浅双主题',
+    desc: '白天黑夜自动适配的简约学术排版，专注阅读，手机上也能顺畅浏览。',
+  },
+]
 
 const totalMaterials = computed(() =>
   categories.value.reduce((sum, item) => sum + (item.material_count || 0), 0),
@@ -45,26 +70,31 @@ onMounted(async () => {
 
 <template>
   <div class="container home">
-    <!-- 欢迎区 -->
-    <section class="welcome rise-in">
-      <h1 class="welcome__title">地理学学习资料共享</h1>
-      <p class="welcome__desc">
-        汇集自然地理、人文地理、GIS 遥感、区域地理与地质地貌的课件、笔记与真题，
-        支持上传、检索、收藏与讨论。
-      </p>
-      <div class="welcome__actions">
-        <RouterLink class="btn btn--primary" :to="{ name: 'materials' }">
-          浏览资料库
-          <AppIcon name="arrowRight" :size="16" />
-        </RouterLink>
-        <RouterLink class="btn btn--secondary" :to="{ name: 'upload' }">
-          <AppIcon name="upload" :size="16" />
-          上传资料
-        </RouterLink>
+    <!-- 主题大图轮播：等高线山体 / 遥感网格 / 城市与人口 / 岩层剖面 -->
+    <HeroCarousel class="rise-in" />
+
+    <!-- 网站介绍 + 功能介绍 -->
+    <section class="section intro rise-in">
+      <div class="intro__head">
+        <h2 class="section__title">关于本站</h2>
+        <p class="intro__stat num">
+          现有资料 {{ totalMaterials }} 份 · 分类 {{ categories.length }} 个
+        </p>
       </div>
-      <p class="welcome__stat num">
-        现有资料 {{ totalMaterials }} 份 · 分类 {{ categories.length }} 个
+      <p class="intro__text">
+        这是一个面向地理学专业的学习资料共享平台：把散落在网盘、聊天记录里的课件、笔记、真题
+        集中起来，按自然地理、人文地理、GIS 遥感、区域地理、地质地貌归类，
+        配上讨论区，让找资料和问问题都只用几分钟。
       </p>
+      <div class="features">
+        <article v-for="item in FEATURES" :key="item.title" class="card feature">
+          <span class="feature__icon">
+            <AppIcon :name="item.icon" :size="18" />
+          </span>
+          <h3 class="feature__title">{{ item.title }}</h3>
+          <p class="feature__desc">{{ item.desc }}</p>
+        </article>
+      </div>
     </section>
 
     <!-- 热门下载：横向滚动卡片组 -->
@@ -202,29 +232,70 @@ onMounted(async () => {
   padding-bottom: 24px;
 }
 
-.welcome {
-  padding: 8px 0 28px;
+.intro {
+  padding: 22px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
 }
 
-.welcome__title {
-  margin-bottom: 8px;
-}
-
-.welcome__desc {
-  max-width: 640px;
-  color: var(--text-2);
-}
-
-.welcome__actions {
+.intro__head {
   display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 12px;
-  margin-top: 20px;
+  flex-wrap: wrap;
 }
 
-.welcome__stat {
-  margin-top: 14px;
+.intro__stat {
   color: var(--text-3);
   font-size: var(--fs-small);
+}
+
+.intro__text {
+  max-width: 760px;
+  margin: 10px 0 20px;
+  color: var(--text-2);
+  line-height: var(--lh-body);
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.feature {
+  padding: 18px 18px 20px;
+  transition: box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+
+.feature:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.feature__icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.feature__title {
+  margin: 12px 0 6px;
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-medium);
+}
+
+.feature__desc {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-small);
+  line-height: var(--lh-small);
 }
 
 .section-head__hint {

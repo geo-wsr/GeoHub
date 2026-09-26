@@ -28,6 +28,7 @@ urlpatterns = [
     path('auth/me/', api.me_view, name='auth-me'),
     path('auth/providers/', api.auth_providers, name='auth-providers'),
     path('profile/', api.profile_view, name='profile'),
+    path('profile/avatar/', api.profile_avatar_view, name='profile-avatar'),
     path('search/', api.search_view, name='search'),
     path('', include(router.urls)),
 ]

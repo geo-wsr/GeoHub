@@ -332,6 +332,16 @@ print([hex(ord(c)) for c in value])
 - **Serverless 部署链路（方案 2，免 ICP 备案）**：根目录 `render.yaml` 蓝图（Render 免费实例 +
   gunicorn + 启动时自动迁移）、`DATABASE_URL` 连 Neon Postgres、`AWS_*` 一组变量切到 Cloudflare R2、
   WhiteNoise 托管 `/static/`；`.github/workflows/deploy-backend.yml` 已改为触发 Render 部署钩子
+- **首页视觉**：`HeroCarousel.vue` 四张主题大图（自然地理/GIS/人文地理/地质地貌），
+  插画是**内联 SVG**（不是位图，任意分辨率清晰、体积几乎为零），带自动播放、圆点、
+  左右箭头与触摸滑动，悬停/页面隐藏/系统"减少动效"时自动暂停；下方是网站介绍 + 功能卡片
+- **进站登录引导**：游客首次访问弹 `LoginPrompt.vue`（可关闭，sessionStorage 记标记），
+  不阻断浏览；入口含 GitHub 登录、注册、站内登录
+- **自定义头像**：`UserProfile`（一对一扩展表，不动 auth 表）+ `POST/DELETE /api/profile/avatar/`
+  （≤2 MB，JPG/PNG/WebP/GIF），个人中心可上传/移除；评论、楼层、帖子、头部统一显示
+- **第三方登录现状**：GitHub OAuth 已接线（配 `GITHUB_CLIENT_ID`/`SECRET` 即生效）；
+  **微信登录没做**——微信开放平台的网站应用要求企业主体 + 已备案域名（个人开发者无法申请），
+  与本项目"免备案境外托管"的定位冲突，详见 `docs/github-integration.md` 第 2 节
 - **线上已上线（2026-09-26）**：前端 <https://www.bnugeohub.cn/>（GitHub Pages 自定义域名，
   `PAGES_BASE_PATH=/`，Enforce HTTPS 已开）、后端 <https://api.bnugeohub.cn>
   （Render `geohub-api`，自定义域名已签证书）、数据库 Neon、

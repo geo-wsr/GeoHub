@@ -131,7 +131,11 @@ async function handleLogout() {
             aria-haspopup="menu"
             @click="menuOpen = !menuOpen"
           >
-            <UserAvatar :name="authState.user.display_name" :size="30" />
+              <UserAvatar
+                :name="authState.user.display_name"
+                :src="authState.user.avatar_url"
+                :size="30"
+              />
           </button>
           <RouterLink v-else class="btn btn--secondary btn--sm" :to="{ name: 'login' }">
             登录

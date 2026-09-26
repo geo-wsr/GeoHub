@@ -22,30 +22,65 @@ from .models import (
 User = get_user_model()
 
 
+def avatar_url_for(user, request=None):
+    """头像的绝对地址；未设置头像时返回空串，前端回落成首字母/地球占位图。
+
+    生产环境 MEDIA_URL 指向对象存储（本身就是绝对地址），本地开发是 /media/…，
+    所以这里只在必要时用 request 拼成绝对地址。
+    """
+    profile = getattr(user, 'profile', None)
+    avatar = getattr(profile, 'avatar', None)
+    if not avatar:
+        return ''
+    try:
+        url = avatar.url
+    except ValueError:
+        return ''
+    if url.startswith('http'):
+        return url
+    return request.build_absolute_uri(url) if request else url
+
+
 class UserBriefSerializer(serializers.ModelSerializer):
     """对外暴露的最小用户信息。昵称沿用 Django 的 first_name。"""
 
     display_name = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'display_name')
+        fields = ('id', 'username', 'display_name', 'avatar_url')
 
     def get_display_name(self, obj):
         return obj.first_name or obj.username
+
+    def get_avatar_url(self, obj):
+        return avatar_url_for(obj, self.context.get('request'))
 
 
 class CurrentUserSerializer(serializers.ModelSerializer):
     """当前登录用户的完整信息，供头部与个人中心使用。"""
 
     display_name = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'display_name', 'email', 'is_staff', 'date_joined')
+        fields = (
+            'id',
+            'username',
+            'display_name',
+            'avatar_url',
+            'email',
+            'is_staff',
+            'date_joined',
+        )
 
     def get_display_name(self, obj):
         return obj.first_name or obj.username
+
+    def get_avatar_url(self, obj):
+        return avatar_url_for(obj, self.context.get('request'))
 
 
 class CategorySerializer(serializers.ModelSerializer):
