@@ -607,6 +607,60 @@ class AttachmentTests(BaseAPITestCase):
         )
 
 
+class ExternalMaterialTests(BaseAPITestCase):
+    """外链资料：文件放在前端静态站/CDN，后端只存地址，下载走 302，不占对象存储。"""
+
+    URL = '/api/materials/'
+
+    def test_admin_can_create_external_material(self):
+        self.login(self.admin)
+        response = self.client.post(
+            self.URL,
+            {
+                'title': '外链资料示例',
+                'category': self.category.id,
+                'description': '讲义放在前端静态站',
+                'source_url': 'https://www.bnugeohub.cn/materials/demo-slides.pdf',
+                'is_public': 'true',
+            },
+            format='multipart',
+        )
+        self.assertEqual(response.status_code, 201)
+        material = Material.objects.get(title='外链资料示例')
+        self.assertFalse(material.file)  # 没有真实文件
+        self.assertEqual(material.file_ext, '.pdf')  # 扩展名从 URL 推断
+        self.assertTrue(response.json()['is_external'])
+
+    def test_download_redirects_to_source_url_and_counts(self):
+        self.login(self.user)
+        material = Material.objects.create(
+            title='外链资料',
+            category=self.category,
+            uploader=self.admin,
+            status=Material.Status.APPROVED,
+            is_public=True,
+            source_url='https://www.bnugeohub.cn/materials/demo.pdf',
+            file_ext='.pdf',
+        )
+        response = self.client.get(f'/api/materials/{material.id}/download/')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response['Location'], 'https://www.bnugeohub.cn/materials/demo.pdf'
+        )
+        material.refresh_from_db()
+        self.assertEqual(material.download_count, 1)
+        self.assertTrue(DownloadRecord.objects.filter(material=material).exists())
+
+    def test_requires_file_or_source_url(self):
+        self.login(self.admin)
+        response = self.client.post(
+            self.URL,
+            {'title': '既没文件也没外链', 'category': self.category.id},
+            format='multipart',
+        )
+        self.assertEqual(response.status_code, 400)
+
+
 class TagCategoryTests(BaseAPITestCase):
     """标签按分类过滤：上传页与资料库侧栏据此联动。"""
 

@@ -73,7 +73,15 @@ class Material(models.Model):
     )
     description = models.TextField('内容简介', blank=True)
     tags = models.ManyToManyField(Tag, blank=True, related_name='materials', verbose_name='标签')
-    file = models.FileField('文件', upload_to=material_upload_path)
+    # 文件本体：可以留空 —— 外链资料把文件放在 CDN/静态站，只在这里存地址
+    file = models.FileField('文件', upload_to=material_upload_path, blank=True)
+    # 外链地址：填了它就不往对象存储放文件，下载时后端 302 跳过去（不占后端空间）
+    source_url = models.URLField(
+        '外链地址',
+        max_length=500,
+        blank=True,
+        help_text='文件放在外部（如前端静态站/CDN）时填这里，下载会直接跳转',
+    )
     original_name = models.CharField('原始文件名', max_length=255, blank=True)
     file_ext = models.CharField('扩展名', max_length=10, blank=True)
     file_size = models.PositiveBigIntegerField('文件大小(字节)', default=0)

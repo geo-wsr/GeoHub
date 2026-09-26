@@ -1,4 +1,5 @@
 import os
+from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -205,6 +206,7 @@ class MaterialListSerializer(serializers.ModelSerializer):
     comment_count = serializers.IntegerField(source='comments.count', read_only=True)
     is_favorited = serializers.SerializerMethodField()
     is_owner = serializers.SerializerMethodField()
+    is_external = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     class Meta:
@@ -221,6 +223,7 @@ class MaterialListSerializer(serializers.ModelSerializer):
             'download_count',
             'favorite_count',
             'comment_count',
+            'is_external',
             'status',
             'status_display',
             'review_note',
@@ -243,16 +246,22 @@ class MaterialListSerializer(serializers.ModelSerializer):
         user = self.context.get('request').user if self.context.get('request') else None
         return bool(user and user.is_authenticated and obj.uploader_id == user.id)
 
+    def get_is_external(self, obj):
+        """外链资料：文件不在对象存储里，下载走 302 跳转。"""
+        return bool(obj.source_url)
+
 
 class MaterialDetailSerializer(MaterialListSerializer):
     original_name = serializers.CharField(read_only=True)
     download_url = serializers.SerializerMethodField()
+    source_url = serializers.CharField(read_only=True)
     review_logs = ReviewLogSerializer(many=True, read_only=True)
 
     class Meta(MaterialListSerializer.Meta):
         fields = MaterialListSerializer.Meta.fields + (
             'original_name',
             'download_url',
+            'source_url',
             'review_logs',
         )
 
@@ -271,8 +280,21 @@ class MaterialWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Material
-        fields = ('id', 'title', 'category', 'description', 'tags', 'file', 'is_public')
-        extra_kwargs = {'file': {'required': True}}
+        fields = (
+            'id',
+            'title',
+            'category',
+            'description',
+            'tags',
+            'file',
+            'source_url',
+            'is_public',
+        )
+        # 文件与外链二选一，具体在 validate() 里判断
+        extra_kwargs = {
+            'file': {'required': False},
+            'source_url': {'required': False, 'allow_blank': True},
+        }
 
     def validate_title(self, value):
         value = value.strip()
@@ -286,6 +308,31 @@ class MaterialWriteSerializer(serializers.ModelSerializer):
         # 否则前端上传的资料会直接变成"非公开"而在列表里消失。
         if 'is_public' not in self.initial_data:
             attrs['is_public'] = True
+
+        # 文件与外链二选一：只在新建时强制。
+        # （编辑时不能强制 —— 历史资料可能既没有文件也没有外链地址，
+        #  比如测试夹具或文件被运维清理过的记录，强制会让"重新提交"直接 400）
+        file = attrs.get('file') or getattr(self.instance, 'file', None)
+        source_url = (
+            attrs['source_url'].strip()
+            if attrs.get('source_url')
+            else (getattr(self.instance, 'source_url', '') or '')
+        )
+        if self.instance is None and not file and not source_url:
+            raise serializers.ValidationError(
+                {'source_url': '请上传文件，或填写外链地址（二选一）。'}
+            )
+
+        # 外链资料：没有真实文件，就从 URL 推断扩展名，让卡片上的格式标签不空着
+        if source_url and not file:
+            path = urlsplit(source_url).path
+            ext = os.path.splitext(path)[1].lower()
+            attrs['file_ext'] = ext[:10]
+            attrs['file_size'] = 0
+            if not attrs.get('original_name') and not getattr(
+                self.instance, 'original_name', ''
+            ):
+                attrs['original_name'] = os.path.basename(path)[:255]
         return attrs
 
     def validate_file(self, value):
@@ -311,13 +358,20 @@ class MaterialWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         tag_names = validated_data.pop('tags', [])
-        uploaded = validated_data['file']
+        uploaded = validated_data.get('file')
+        extra = {}
+        if uploaded:
+            # 真实文件：记下原始名 / 扩展名 / 大小
+            extra = {
+                'original_name': uploaded.name,
+                'file_ext': os.path.splitext(uploaded.name)[1].lower(),
+                'file_size': uploaded.size,
+            }
+        # 外链资料：file_ext 等由 validate() 从 URL 推断，这里不覆盖
+        extra.update({k: v for k, v in validated_data.items() if k in ('file_ext', 'file_size', 'original_name')})
         material = Material.objects.create(
             uploader=self.context['request'].user,
-            original_name=uploaded.name,
-            file_ext=os.path.splitext(uploaded.name)[1].lower(),
-            file_size=uploaded.size,
-            **validated_data,
+            **{**validated_data, **extra},
         )
         self._sync_tags(material, tag_names)
         return material

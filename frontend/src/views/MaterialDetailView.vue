@@ -28,9 +28,17 @@ const infoRows = computed(() => {
   const item = material.value
   if (!item) return []
   return [
-    { label: '文件名', value: item.original_name || '—', icon: 'folder' },
+    {
+      label: item.is_external ? '文件位置' : '文件名',
+      value: item.is_external ? '外部链接（不占本站空间）' : item.original_name || '—',
+      icon: 'folder',
+    },
     { label: '格式', value: fileLabel(item.file_ext), icon: 'tag' },
-    { label: '大小', value: formatSize(item.file_size), icon: 'layers' },
+    {
+      label: '大小',
+      value: item.is_external ? '见来源站点' : formatSize(item.file_size),
+      icon: 'layers',
+    },
     { label: '下载量', value: `${item.download_count} 次`, icon: 'download' },
     { label: '收藏数', value: `${item.favorite_count} 人`, icon: 'heart' },
     { label: '上传时间', value: formatDate(item.created_at), icon: 'clock' },
@@ -215,7 +223,8 @@ watch(() => props.id, load, { immediate: true })
               @click="handleDownload"
             >
               <AppIcon name="download" :size="18" />
-              下载资料（{{ formatSize(material.file_size) }}）
+              <template v-if="material.is_external">前往下载</template>
+              <template v-else>下载资料（{{ formatSize(material.file_size) }}）</template>
             </button>
             <RouterLink
               v-else

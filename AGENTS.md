@@ -169,6 +169,7 @@ Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
 | `GET materials/{id}/` | 详情 |
 | `PATCH/DELETE materials/{id}/` | 仅上传者或 staff（管理员可改全站资料） |
 | `GET materials/{id}/download/` | **必须登录**；返回文件、累加 `download_count`、写下载记录 |
+| `POST/PATCH materials/` 传 `source_url` | **外链资料**：文件放在前端 `public/materials/` 或任意 CDN，后端只存地址；下载时 302 跳转并照常计数，不占对象存储 |
 | `POST materials/{id}/favorite/` | 收藏/取消收藏开关，需登录 |
 | `POST materials/{id}/review/` | **仅管理员**；`{action: approve\|reject, note}`，驳回必须填 `note` |
 | `GET\|POST materials/{id}/comments/` | 一级评论（含内联 replies，倒序、可分页）；POST 需登录 |
@@ -339,6 +340,10 @@ print([hex(ord(c)) for c in value])
   不阻断浏览；入口含 GitHub 登录、注册、站内登录
 - **自定义头像**：`UserProfile`（一对一扩展表，不动 auth 表）+ `POST/DELETE /api/profile/avatar/`
   （≤2 MB，JPG/PNG/WebP/GIF），个人中心可上传/移除；评论、楼层、帖子、头部统一显示
+- **外链资料（省后端存储）**：`Material.source_url` + 下载 302。把 PDF 放进
+  `frontend/public/materials/`（随前端发布，Pages 直链，单文件建议 ≤50MB），
+  在「上传资料 → 资料形式 → 外链地址」登记；走 CDN 不占对象存储，下载量照常统计。
+  适合"管理员定稿、下载量大"的资料；用户上传/需审核的仍走上传流程
 - **第三方登录现状**：GitHub OAuth 已接线（配 `GITHUB_CLIENT_ID`/`SECRET` 即生效）；
   **微信登录没做**——微信开放平台的网站应用要求企业主体 + 已备案域名（个人开发者无法申请），
   与本项目"免备案境外托管"的定位冲突，详见 `docs/github-integration.md` 第 2 节

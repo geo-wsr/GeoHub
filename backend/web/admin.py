@@ -39,6 +39,7 @@ class MaterialAdmin(admin.ModelAdmin):
         'status',
         'file_ext',
         'file_size',
+        'is_external_link',
         'download_count',
         'is_public',
         'created_at',
@@ -48,6 +49,11 @@ class MaterialAdmin(admin.ModelAdmin):
     search_fields = ('title', 'description', 'original_name')
     date_hierarchy = 'created_at'
     filter_horizontal = ('tags',)
+
+    @admin.display(boolean=True, description='外链')
+    def is_external_link(self, obj):
+        return bool(obj.source_url)
+
     readonly_fields = (
         'download_count',
         'file_size',

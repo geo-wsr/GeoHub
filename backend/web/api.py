@@ -535,6 +535,11 @@ class MaterialViewSet(FavoritedIdsContextMixin, viewsets.ModelViewSet):
         )
         DownloadRecord.objects.create(user=request.user, material=material)
 
+        # 外链资料：文件不在对象存储里（放在前端静态站/CDN 等），直接 302 跳过去。
+        # 注意仍然走了上面的下载量累加与记录，所以统计不受影响。
+        if material.source_url:
+            return HttpResponseRedirect(material.source_url)
+
         if not material.file:
             raise Http404('该资料没有可下载的文件。')
 

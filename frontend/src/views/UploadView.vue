@@ -25,6 +25,9 @@ const isEditing = computed(() => Boolean(editId.value))
 const categories = ref([])
 const categoriesError = ref('')
 const form = ref({ title: '', category: '', description: '', tags: '' })
+// 资料形式：上传文件（占后端对象存储）或外链（文件放在前端静态站/CDN，不占后端）
+const sourceType = ref('file')
+const sourceUrl = ref('')
 // 常用标签：按所选分类拉取，点一下追加到标签输入框
 const tagSuggestions = ref([])
 const file = ref(null)
@@ -68,7 +71,14 @@ function validate() {
   const next = {}
   if (form.value.title.trim().length < 2) next.title = '标题至少 2 个字符'
   if (!form.value.category) next.category = '请选择所属分类'
-  if (!file.value && !isEditing.value) next.file = '请选择要上传的文件'
+  if (sourceType.value === 'link') {
+    const url = sourceUrl.value.trim()
+    if (!/^https?:\/\/.+\..+/i.test(url)) {
+      next.source = '请填写完整的外链地址（以 http:// 或 https:// 开头）'
+    }
+  } else if (!file.value && !isEditing.value) {
+    next.file = '请选择要上传的文件'
+  }
   errors.value = next
   return Object.keys(next).length === 0
 }
@@ -88,7 +98,12 @@ async function submit() {
     .map((item) => item.trim())
     .filter(Boolean)
     .forEach((tag) => payload.append('tags', tag))
-  payload.append('file', file.value)
+  if (sourceType.value === 'link') {
+    // 外链资料：只提交地址，后端下载时 302 跳过去
+    payload.append('source_url', sourceUrl.value.trim())
+  } else {
+    payload.append('file', file.value)
+  }
 
   const onProgress = (event) => {
     if (event.total) progress.value = Math.round((event.loaded / event.total) * 100)
@@ -168,6 +183,11 @@ onMounted(async () => {
     form.value.category = String(material.category?.id || '')
     form.value.description = material.description
     form.value.tags = (material.tags || []).map((item) => item.name).join(', ')
+    // 外链资料：回填成"外链"模式，避免误以为必须重新选文件
+    if (material.is_external) {
+      sourceType.value = 'link'
+      sourceUrl.value = material.source_url || ''
+    }
   } catch (error) {
     pushToast(errorMessage(error), 'error')
     router.replace({ name: 'materials' })
@@ -260,7 +280,45 @@ onMounted(async () => {
         />
       </label>
 
+      <!-- 资料形式：上传文件（走对象存储）或外链（文件在外部，不占后端空间） -->
       <div class="field">
+        <span class="field__label">资料形式<span class="field__required">*</span></span>
+        <div class="seg">
+          <button
+            class="seg__item"
+            :class="{ 'is-active': sourceType === 'file' }"
+            type="button"
+            @click="sourceType = 'file'"
+          >
+            上传文件
+          </button>
+          <button
+            class="seg__item"
+            :class="{ 'is-active': sourceType === 'link' }"
+            type="button"
+            @click="sourceType = 'link'"
+          >
+            外链地址
+          </button>
+        </div>
+        <span class="field__hint">
+          外链资料的文件放在外部（前端静态站 / CDN），完全不占用后端存储空间。
+        </span>
+      </div>
+
+      <label v-if="sourceType === 'link'" class="field">
+        <span class="field__label">外链地址<span class="field__required">*</span></span>
+        <input
+          v-model="sourceUrl"
+          class="input"
+          type="url"
+          placeholder="https://www.bnugeohub.cn/materials/xxx.pdf"
+        />
+        <span v-if="errors.source" class="field__error">{{ errors.source }}</span>
+        <span class="field__hint">用户点下载时后端会 302 跳到这个地址，下载量照常统计。</span>
+      </label>
+
+      <div v-else class="field">
         <span class="field__label">资料文件<span class="field__required">*</span></span>
 
         <!-- 拖拽式上传区：默认虚线边框，hover 变实线并加深 -->
@@ -313,6 +371,32 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-hover);
+}
+
+.seg__item {
+  padding: 6px 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-small);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.seg__item.is-active {
+  background: var(--bg-card);
+  color: var(--color-primary);
+  font-weight: var(--fw-medium);
+  box-shadow: var(--shadow-card);
+}
+
 .tag-picks {
   display: flex;
   flex-wrap: wrap;

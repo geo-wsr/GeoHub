@@ -49,6 +49,7 @@ async function toggleFavorite() {
         {{ material.category?.name }}
       </span>
       <span class="m-card__ext">{{ fileLabel(material.file_ext) }}</span>
+      <span v-if="material.is_external" class="m-card__ext m-card__ext--link">外链</span>
     </div>
 
     <RouterLink
@@ -141,6 +142,16 @@ async function toggleFavorite() {
   font-family: var(--font-latin);
   font-size: var(--fs-small);
   letter-spacing: 0.04em;
+}
+
+/* 外链资料标记：文件不在本站，靠 CDN 分发 */
+.m-card__ext--link {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  letter-spacing: 0;
 }
 
 .m-card__title {
