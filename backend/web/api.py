@@ -144,7 +144,15 @@ def register_view(request):
     if len(username) < 3:
         return Response({'detail': '用户名至少 3 个字符。'}, status=status.HTTP_400_BAD_REQUEST)
     if User.objects.filter(username=username).exists():
-        return Response({'detail': '该用户名已被注册。'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {
+                'detail': (
+                    '该用户名已被注册。如果这个名字就是你自己注册过的，请直接登录'
+                    '（忘记密码可让管理员在后台重置）；否则请换一个用户名。'
+                )
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
     try:
         validate_password(password)
     except DjangoValidationError as exc:
