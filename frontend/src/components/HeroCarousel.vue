@@ -46,7 +46,8 @@ const SLIDES = [
     title: '读懂岩层里的时间',
     desc: '地质构造、岩石矿物、地貌演化与地质灾害，剖面图与野外记录一网打尽。',
     cta: '查看地质地貌资料',
-    query: { category: 'geology' },
+    // 「地质地貌」现在是自然地理下的标签，所以按 分类 + 标签 组合筛选
+    query: { category: 'physical', tag: '地质地貌' },
     bg: 'linear-gradient(135deg, var(--bg-hover), var(--bg-card) 62%)',
   },
 ]

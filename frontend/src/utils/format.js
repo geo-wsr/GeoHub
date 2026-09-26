@@ -3,6 +3,9 @@ const CATEGORY_ICONS = {
   physical: 'mountain',
   human: 'building',
   gis: 'satellite',
+  math: 'book',
+  other: 'folder',
+  // 兼容旧数据：早期用过这两个分类 slug，历史资料仍可能引用
   regional: 'map',
   geology: 'layers',
 }

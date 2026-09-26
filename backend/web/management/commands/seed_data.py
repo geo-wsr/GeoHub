@@ -1,9 +1,10 @@
-"""初始化演示数据：五个资料分类，以及（可选）三份可直接下载的示例资料。
+"""初始化基础数据：五个资料分类、六个论坛板块、各分类常用标签。
 
 用法：
-    python manage.py seed_data                # 只创建/更新分类
-    python manage.py seed_data --demo         # 追加三份示例资料
-    python manage.py seed_data --clear-demo   # 删除示例资料（按标记识别）
+    python manage.py seed_data                     # 创建/更新分类、板块与标签
+    python manage.py seed_data --prune-categories  # 额外删除不在清单里的空分类
+    python manage.py seed_data --demo              # 追加三份示例资料
+    python manage.py seed_data --clear-demo        # 删除示例资料（按标记识别）
 """
 
 from django.contrib.auth import get_user_model
@@ -16,11 +17,34 @@ User = get_user_model()
 
 # 分类：名称、slug（前端据 slug 映射线性图标）、简介、排序
 CATEGORIES = [
-    ('自然地理', 'physical', '地貌、气候、水文、土壤、植被等自然地理要素', 1),
-    ('人文地理', 'human', '人口、城市、经济、文化、旅游等人文地理要素', 2),
-    ('GIS遥感', 'gis', '地理信息系统与遥感技术、空间分析、专题制图', 3),
-    ('区域地理', 'regional', '中国与世界各区域的地理特征与区域差异', 4),
-    ('地质地貌', 'geology', '地质构造、岩石矿物、地貌演化与地质灾害', 5),
+    ('自然地理', 'physical', '地质地貌、气象与气候、水文、土壤、生物、自然灾害', 1),
+    ('人文地理', 'human', '经济、人口、城市、交通', 2),
+    ('GIS遥感', 'gis', '地图学、地理信息系统、遥感技术', 3),
+    ('数理基础', 'math', '高等数学、线性代数、概率统计、大学物理等专业基础课', 4),
+    ('其他', 'other', '不属于上述分类的资料：工具、模板、杂项等', 5),
+]
+
+# 标签：全局共用（资料与帖子都可以挂），这里把各分类下的常用标签先建好
+TAGS = [
+    # 自然地理
+    '地质地貌',
+    '气象与气候',
+    '水文',
+    '土壤',
+    '生物',
+    '自然灾害',
+    # 人文地理
+    '经济',
+    '人口',
+    '城市',
+    '交通',
+    # GIS 与遥感
+    '地图学',
+    'GIS',
+    '遥感',
+    # 数理基础
+    '数学',
+    '物理',
 ]
 
 # 论坛板块：前五个与资料分类对应，外加"学习交流"
@@ -43,7 +67,7 @@ DEMO_MATERIALS = [
             '按地形、气候与水文特征梳理中国三大自然区（东部季风区、西北干旱半干旱区、'
             '青藏高寒区）的划分依据与主要差异，附常用分区指标对照。'
         ),
-        'tags': ['气候', '地貌', '自然区划'],
+        'tags': ['气象与气候', '水文'],
     },
     {
         'title': 'GIS 空间分析方法整理',
@@ -52,16 +76,16 @@ DEMO_MATERIALS = [
             '汇总缓冲区分析、叠加分析、网络分析、插值与栅格计算的基本原理与适用场景，'
             '并给出 ArcGIS 中的操作路径与常见坑位。'
         ),
-        'tags': ['空间分析', 'ArcGIS', '制图'],
+        'tags': ['GIS', '地图学'],
     },
     {
         'title': '板块构造与地貌演化笔记',
-        'category': 'geology',
+        'category': 'physical',
         'description': (
             '从板块边界类型出发，整理挤压、张裂、剪切三种构造背景下对应的地貌组合，'
             '并附典型实例（喜马拉雅、东非大裂谷、圣安地列斯断层）。'
         ),
-        'tags': ['构造', '地貌演化', '地质'],
+        'tags': ['地质地貌', '自然灾害'],
     },
 ]
 
@@ -143,6 +167,11 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--demo', action='store_true', help='同时生成三份示例资料')
         parser.add_argument('--clear-demo', action='store_true', help='删除示例资料')
+        parser.add_argument(
+            '--prune-categories',
+            action='store_true',
+            help='删除不在清单里的分类（只删没有任何资料的，避免误伤）',
+        )
 
     def handle(self, *args, **options):
         if options['clear_demo']:
@@ -151,6 +180,9 @@ class Command(BaseCommand):
 
         self.sync_categories()
         self.sync_boards()
+        self.sync_tags()
+        if options['prune_categories']:
+            self.prune_categories()
         if options['demo']:
             self.create_demo()
 
@@ -163,6 +195,41 @@ class Command(BaseCommand):
             flag = '新建' if created else '更新'
             self.stdout.write(f'  {flag}分类：{category.name}（{category.slug}）')
         self.stdout.write(self.style.SUCCESS(f'分类就绪，共 {Category.objects.count()} 个'))
+
+    def sync_tags(self):
+        created_count = 0
+        for name in TAGS:
+            _, created = Tag.objects.get_or_create(name=name)
+            created_count += int(created)
+        self.stdout.write(
+            self.style.SUCCESS(
+                f'标签就绪：本次新建 {created_count} 个，共 {Tag.objects.count()} 个'
+            )
+        )
+
+    def prune_categories(self):
+        """删除已不在清单里的分类。
+
+        只删「没有任何资料」的分类：有资料的会被保留并打印出来，
+        提醒维护者先决定这些资料迁到哪个分类，避免误删造成资料失去归类。
+        """
+        keep = {slug for _, slug, _, _ in CATEGORIES}
+        removed, kept = [], []
+        for category in Category.objects.exclude(slug__in=keep):
+            count = category.materials.count()
+            if count:
+                kept.append(f'{category.name}（{count} 份资料）')
+                continue
+            removed.append(category.name)
+            category.delete()
+        if removed:
+            self.stdout.write(self.style.WARNING(f'已删除空分类：{"、".join(removed)}'))
+        if kept:
+            self.stdout.write(
+                self.style.WARNING(f'这些分类还有资料，已保留：{"、".join(kept)}')
+            )
+        if not removed and not kept:
+            self.stdout.write('没有需要清理的分类。')
 
     def sync_boards(self):
         for name, slug, description, order in BOARDS:
