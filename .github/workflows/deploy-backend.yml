@@ -5,6 +5,7 @@
 #     Render 控制台 → 你的 Web Service → Settings → Deploy Hook，复制整条 URL
 #   建议同时在 Render 里关闭 Auto-Deploy，否则一次推送会触发两次部署
 #   未配置该 Secret 时安全跳过（不会出现失败的红叉）
+#   注意：钩子成功时返回 202 Accepted，工作流按 2xx 判定成功
 # ==========================================================================
 name: Deploy backend to Render
 
@@ -53,9 +54,15 @@ jobs:
           echo "触发 Render 部署…"
           code=$(curl -sS -o /tmp/render_resp.txt -w '%{http_code}' -X POST "$RENDER_DEPLOY_HOOK")
           cat /tmp/render_resp.txt || true
-          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
-            echo "::error::Render 部署钩子返回 HTTP $code，部署未触发。"
-            echo "排查顺序：1) 钩子是否被删除或轮换 2) Render 服务是否 suspended 3) 免费额度是否用尽"
-            exit 1
-          fi
-          echo "已触发 ✅ 构建进度见 https://dashboard.render.com"
+          # Render 的部署钩子成功时返回 202 Accepted（不是 200/201），
+          # 所以这里按 2xx 判定；4xx 一般是钩子被轮换（需要更新 Secret）
+          case "$code" in
+            2*)
+              echo "已触发 ✅ 构建进度见 https://dashboard.render.com"
+              ;;
+            *)
+              echo "::error::Render 部署钩子返回 HTTP $code，部署未触发。"
+              echo "排查顺序：1) 钩子是否被轮换（Render → Settings → Deploy Hook 重新复制）2) Secret 是否过期 3) Render 服务是否 suspended 4) 免费额度是否用尽"
+              exit 1
+              ;;
+          esac
