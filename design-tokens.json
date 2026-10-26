@@ -1,0 +1,57 @@
+{
+  "source": {
+    "document": "D:/codex/2026-10-18/wei/outputs/杜能农业区位论.tex",
+    "figures": [
+      "D:/codex/2026-10-18/wei/outputs/figures/图1-杜能圈.png",
+      "D:/codex/2026-10-18/wei/outputs/figures/图2-竞租曲线.png",
+      "D:/codex/2026-10-18/wei/outputs/figures/图3-圈层变形.png"
+    ],
+    "extractionDate": "2026-10-21"
+  },
+  "color": {
+    "background": "#F6F1E7",
+    "paper": "#FCF9F3",
+    "lightField": "#F3F7F3",
+    "ink": "#22302A",
+    "primary": "#1F5C4A",
+    "primarySoft": "#2F6B5E",
+    "ochre": "#8A5A2B",
+    "accent": "#C65D3B",
+    "transport": "#3B6EA8",
+    "secondaryCity": "#8A6BBE",
+    "border": "#D8D0C0",
+    "mutedText": "#647069",
+    "ringFills": [
+      "#E6F0E7",
+      "#C9DCCA",
+      "#E2E8C4",
+      "#EDE2C2",
+      "#EDD6BF",
+      "#E2C6B2"
+    ],
+    "wild": "#F2F1ED"
+  },
+  "typography": {
+    "display": "Noto Serif SC, Source Han Serif SC, Songti SC, STSong, serif",
+    "body": "Noto Sans SC, Source Han Sans SC, Microsoft YaHei UI, PingFang SC, sans-serif",
+    "numeric": "IBM Plex Mono, Cascadia Mono, SFMono-Regular, Consolas, monospace",
+    "tone": "克制、学术、纸张感；标题取宋体气质，正文取清晰黑体"
+  },
+  "geometry": {
+    "radiusLarge": "22px",
+    "radiusMedium": "14px",
+    "hairline": "1px",
+    "heavyShadow": "none",
+    "chartStroke": "1.5–2.4px",
+    "mapBoundaryStroke": "1.1px"
+  },
+  "motion": {
+    "easeOut": "cubic-bezier(0.23, 1, 0.32, 1)",
+    "easeInOut": "cubic-bezier(0.77, 0, 0.175, 1)",
+    "easeDrawer": "cubic-bezier(0.32, 0.72, 0, 1)",
+    "pressDurationMs": 120,
+    "modalDurationMs": 220,
+    "drawerDurationMs": 240,
+    "reducedMotion": "保留透明度和颜色反馈；移除位移、缩放与模糊动画"
+  }
+}

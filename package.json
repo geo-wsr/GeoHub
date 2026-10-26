@@ -1,0 +1,32 @@
+{
+  "name": "quanhezi-geo-visual-platform",
+  "private": true,
+  "version": "2.0.0",
+  "homepage": "https://geo-wsr.github.io/",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "build:release": "tsc -b && vite build --outDir release --emptyOutDir",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:ui": "node scripts/smoke.mjs && node scripts/smoke-dijkstra.mjs && node scripts/smoke-atmosphere.mjs",
+    "test:ui:dijkstra": "node scripts/smoke-dijkstra.mjs",
+    "test:ui:atmosphere": "node scripts/smoke-atmosphere.mjs"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.0.4",
+    "katex": "^0.19.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "vite": "^7.1.7"
+  },
+  "devDependencies": {
+    "@types/katex": "^0.16.7",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "typescript": "~5.9.2",
+    "playwright-core": "^1.56.1",
+    "vitest": "^5.0.5"
+  }
+}

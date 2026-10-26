@@ -1,0 +1,12 @@
+node_modules/
+dist/
+release/
+.deploy/
+.agents/
+.codex/
+.impeccable/
+({outline
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+*.log
