@@ -38,6 +38,7 @@ interface DijkstraLabProps {
   onToggleTheme: () => void;
   onBackHome: () => void;
   onOpenVonThunen: () => void;
+  onOpenAtmosphere: () => void;
 }
 
 type NoticeKind = "info" | "success" | "warning" | "error";
@@ -290,6 +291,7 @@ export default function DijkstraLab({
   onToggleTheme,
   onBackHome,
   onOpenVonThunen,
+  onOpenAtmosphere,
 }: DijkstraLabProps) {
   const [graph, setGraph] = useState<GraphModel>(INITIAL_GRAPH);
   const [startId, setStartId] = useState(DEFAULT_PRESET.start);
@@ -1001,6 +1003,9 @@ export default function DijkstraLab({
               杜能环
             </button>
             <span aria-current="page">Dijkstra</span>
+            <button onClick={onOpenAtmosphere} type="button">
+              大气受力
+            </button>
           </nav>
           <div className="dk-top-actions">
             <button className="dk-button dk-button--quiet" onClick={resetPage} type="button">

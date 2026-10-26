@@ -52,10 +52,18 @@ function PlatformRoot() {
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
     window.localStorage.setItem("quanhezi-theme", theme);
+    const pageColor =
+      view === "home"
+        ? theme === "dark"
+          ? "#191313"
+          : "#f4ebdf"
+        : theme === "dark"
+          ? "#101612"
+          : "#f5f7f3";
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute("content", theme === "dark" ? "#101612" : "#f5f7f3");
-  }, [theme]);
+      ?.setAttribute("content", pageColor);
+  }, [theme, view]);
 
   const toggleTheme = () =>
     setTheme((current) => (current === "dark" ? "light" : "dark"));
@@ -73,10 +81,13 @@ function PlatformRoot() {
       <Suspense fallback={<RouteLoading />}>
         <DijkstraLab
           onBackHome={() => {
-            window.location.hash = "";
+            window.location.hash = "home";
           }}
           onOpenVonThunen={() => {
             window.location.hash = "von-thunen";
+          }}
+          onOpenAtmosphere={() => {
+            window.location.hash = "atmosphere";
           }}
           onToggleTheme={toggleTheme}
           theme={theme}
@@ -91,7 +102,7 @@ function PlatformRoot() {
         <AtmosphericLab
           theme={theme}
           onBackHome={() => {
-            window.location.hash = "";
+            window.location.hash = "home";
           }}
           onToggleTheme={toggleTheme}
         />

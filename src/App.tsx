@@ -374,6 +374,9 @@ export default function App({ theme, onToggleTheme }: AppProps) {
           </span>
         </a>
         <div className="topbar-actions">
+          <a className="app-home-button" href="#home">
+            平台首页
+          </a>
           <div className="topbar-meta">
             <span>约翰·海因里希·冯·杜能 · 1826</span>
             <span className="meta-divider" aria-hidden="true" />

@@ -184,9 +184,7 @@ assert(
     (await page.locator(".qh-section-meta").innerText()).includes("03 个实验"),
   "平台首页没有正确展示大气受力实验入口",
 );
-await atmosphereCard
-  .getByRole("button", { name: "进入大气受力实验室" })
-  .click();
+await atmosphereCard.click();
 await page.locator(".atf-canvas").waitFor();
 assert(
   page.url().includes("#atmosphere"),

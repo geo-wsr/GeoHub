@@ -8,8 +8,8 @@ import {
   useState,
 } from "react";
 import heroClassic from "../../artifacts/feature-shots/01-single-center.png";
-import heroCorridor from "../../artifacts/feature-shots/02-transport-corridor.png";
-import heroTwin from "../../artifacts/feature-shots/03-two-city-competition.png";
+import heroDijkstra from "../../artifacts/fit-1440x900.png";
+import heroAtmosphere from "../../artifacts/atmosphere-desktop-light.png";
 import type { Theme } from "../theme";
 import { BrandMark, Icon } from "./Icons";
 import "./home.css";
@@ -29,6 +29,10 @@ interface HeroSlide {
   image: string;
   imageAlt: string;
   note: string;
+  lab: "von-thunen" | "dijkstra" | "atmosphere";
+  browserLabel: string;
+  cta: string;
+  viewNote: string;
 }
 
 interface SearchEntry {
@@ -36,35 +40,48 @@ interface SearchEntry {
   detail: string;
   target: string;
   keywords: string;
+  lab?: "von-thunen" | "dijkstra" | "atmosphere";
 }
 
 const HERO_SLIDES: HeroSlide[] = [
   {
-    eyebrow: "农业区位论 · 单中心模型",
-    title: "把复杂的地理机制，放进一个可以转动的工作台。",
+    eyebrow: "01 / 农业区位 · 杜能环",
+    title: "让区位选择，在参数改变时被看见。",
     description:
-      "平台将地图、模型参数与解释放在同一个界面里。从地租公式出发，调整距离、交通和市场，圈层的变化会立即回应。",
+      "从地租、距离、交通和市场出发，把农业圈层与竞租曲线放进同一个可编辑模型，观察每一块土地为何属于这种用途。",
     image: heroClassic,
     imageAlt: "杜能环交互实验室的单中心场景界面",
     note: "地租 × 距离 × 土地用途",
+    lab: "von-thunen",
+    browserLabel: "实验室 / 杜能环",
+    cta: "进入杜能环",
+    viewNote: "地图 ↔ 竞租曲线",
   },
   {
-    eyebrow: "交通影响 · 圈层变形",
-    title: "一条交通线，如何重写城市的边缘？",
+    eyebrow: "02 / 网络分析 · Dijkstra",
+    title: "把最短路径，拆成可以观察的每一步。",
     description:
-      "降低道路两侧的有效运费，观察同心圆如何沿交通走廊伸展。地图与竞租曲线共享同一组参数，变化不是装饰，而是计算结果。",
-    image: heroCorridor,
-    imageAlt: "交通线影响场景中的拉伸圈层与地租曲线",
-    note: "有效距离 × 道路折减",
+      "编辑加权图、设置起终点，逐步检查优先队列、距离表和松弛事件，再从 prev 表反向回溯一条完整路径。",
+    image: heroDijkstra,
+    imageAlt: "Dijkstra 最短路径实验室的三栏工作台",
+    note: "松弛 × 优先队列 × 前驱表",
+    lab: "dijkstra",
+    browserLabel: "实验室 / Dijkstra",
+    cta: "进入 Dijkstra",
+    viewNote: "图网络 ↔ 事件状态",
   },
   {
-    eyebrow: "多市场 · 竞租分界",
-    title: "当两个市场相遇，边界就不再是圆。",
+    eyebrow: "03 / 大气动力学 · 受力平衡",
+    title: "让四力平衡，变成可以调参的风场。",
     description:
-      "每个位置同时比较所有市场与作物。最高竞租者决定土地用途，两个市场的影响范围相遇时，分界会显现出清楚的弯曲轮廓。",
-    image: heroTwin,
-    imageAlt: "双城竞争场景中的多市场分界",
-    note: "最高竞租 × 市场分界",
+      "调节气压梯度、纬度、曲率和摩擦，用原生 SVG 矢量合成理解地转风、梯度风与边界层偏转。",
+    image: heroAtmosphere,
+    imageAlt: "大气水平运动受力实验室的矢量平衡工作台",
+    note: "四力 × 风速 × 偏转",
+    lab: "atmosphere",
+    browserLabel: "实验室 / 大气受力",
+    cta: "进入大气受力",
+    viewNote: "力矢量 ↔ 平衡风",
   },
 ];
 
@@ -72,26 +89,26 @@ const FEATURES = [
   {
     icon: "grid" as const,
     index: "01",
-    title: "参数即时重算",
-    description: "作物、运费、城市与道路联动计算，改变一个条件，结果立刻更新。",
+    title: "三个独立模型",
+    description: "农业区位、网络最短路径与大气四力平衡，各自拥有完整的工作台。",
   },
   {
     icon: "layers" as const,
     index: "02",
-    title: "地图与曲线同步",
-    description: "圈层和竞租曲线使用同一模型，不用在两种表达之间自行拼接结论。",
+    title: "输入与结果同屏",
+    description: "参数、地图、曲线、事件表与矢量图始终共享同一组计算结果。",
   },
   {
     icon: "compass" as const,
     index: "03",
-    title: "从场景开始",
-    description: "单中心、交通线、多市场和自由探索四个起点，适合课堂演示与自学。",
+    title: "过程可以追踪",
+    description: "松弛步骤、圈层变化和力的合成都能逐步观察，而不只呈现最终答案。",
   },
   {
     icon: "book" as const,
     index: "04",
-    title: "解释随观察展开",
-    description: "帮助、公式与读数按需出现，让抽象假设能够回到可见的空间关系。",
+    title: "回到同一入口",
+    description: "每个实验室都能随时返回平台首页，在三个模型之间保持清晰路径。",
   },
 ];
 
@@ -101,18 +118,21 @@ const SEARCH_INDEX: SearchEntry[] = [
     detail: "实验 · 地租、距离与土地用途",
     target: "experiment-lab",
     keywords: "杜能 杜能环 农业 区位 地租 地图 曲线 经济地理",
+    lab: "von-thunen",
   },
   {
     label: "Dijkstra · 最短路径实验室",
     detail: "实验 · 图编辑、优先队列与路径回溯",
     target: "experiment-dijkstra",
     keywords: "Dijkstra 最短路径 图 网络 可达性 优先队列 算法 SVG",
+    lab: "dijkstra",
   },
   {
     label: "大气水平运动 · 受力实验室",
     detail: "实验 · 四力平衡、梯度风与边界层",
     target: "experiment-atmosphere",
     keywords: "大气 气象 风 气压梯度力 地转偏向力 科里奥利力 离心力 摩擦力 梯度风",
+    lab: "atmosphere",
   },
   {
     label: "地图与曲线同步",
@@ -194,9 +214,7 @@ export default function HomePage({
     event?.preventDefault();
     const result = matches[activeSearchIndex] ?? matches[0];
     if (result) {
-      setSearchOpen(false);
-      setMenuOpen(false);
-      scrollToSection(result.target);
+      activateSearchEntry(result);
       return;
     }
     if (searchQuery.trim()) {
@@ -208,6 +226,14 @@ export default function HomePage({
     setSearchQuery(entry.label);
     setSearchOpen(false);
     setMenuOpen(false);
+    activateSearchEntry(entry);
+  }
+
+  function activateSearchEntry(entry: SearchEntry) {
+    if (entry.lab) {
+      enterLabByKey(entry.lab);
+      return;
+    }
     scrollToSection(entry.target);
   }
 
@@ -252,6 +278,12 @@ export default function HomePage({
   function enterAtmosphere() {
     setMenuOpen(false);
     onEnterAtmosphere();
+  }
+
+  function enterLabByKey(lab: HeroSlide["lab"]) {
+    if (lab === "von-thunen") enterLab();
+    else if (lab === "dijkstra") enterDijkstra();
+    else enterAtmosphere();
   }
 
   const currentSlide = HERO_SLIDES[slideIndex];
@@ -368,8 +400,12 @@ export default function HomePage({
               <Icon name={menuOpen ? "close" : "menu"} size={19} />
             </button>
 
-            <button className="qh-header-cta" onClick={enterLab} type="button">
-              进入实验室
+            <button
+              className="qh-header-cta"
+              onClick={() => scrollToSection("experiments")}
+              type="button"
+            >
+              查看三个实验室
               <Icon name="arrowRight" size={15} />
             </button>
           </div>
@@ -421,8 +457,15 @@ export default function HomePage({
                   关于 <span>03</span>
                 </a>
               </nav>
-              <button className="qh-mobile-enter" onClick={enterLab} type="button">
-                打开杜能环实验室
+              <button
+                className="qh-mobile-enter"
+                onClick={() => {
+                  setMenuOpen(false);
+                  scrollToSection("experiments");
+                }}
+                type="button"
+              >
+                查看三个实验室
                 <Icon name="arrowRight" size={17} />
               </button>
             </div>
@@ -447,7 +490,7 @@ export default function HomePage({
             <div className="qh-hero-copy" key={`copy-${slideIndex}`}>
               <div className="qh-eyebrow-row">
                 <span className="qh-status-dot" />
-                <span>交互式经济地理实验室</span>
+                <span>交互式地理可视化平台</span>
                 <span className="qh-eyebrow-rule" />
                 <span>
                   {String(slideIndex + 1).padStart(2, "0")} /{" "}
@@ -458,22 +501,26 @@ export default function HomePage({
               <h1>{currentSlide.title}</h1>
               <p className="qh-hero-description">{currentSlide.description}</p>
               <div className="qh-hero-actions">
-                <button className="qh-primary-button" onClick={enterLab} type="button">
-                  打开杜能环
+                <button
+                  className="qh-primary-button"
+                  onClick={() => enterLabByKey(currentSlide.lab)}
+                  type="button"
+                >
+                  {currentSlide.cta}
                   <Icon name="arrowRight" size={17} />
                 </button>
                 <a className="qh-secondary-button" href="#experiments">
-                  浏览实验库
+                  查看全部实验
                 </a>
               </div>
               <dl className="qh-hero-facts">
                 <div>
-                  <dt>04</dt>
-                  <dd>个场景预设</dd>
+                  <dt>03</dt>
+                  <dd>个完整实验室</dd>
                 </div>
                 <div>
-                  <dt>02</dt>
-                  <dd>类视图联动</dd>
+                  <dt>03</dt>
+                  <dd>套空间模型</dd>
                 </div>
                 <div>
                   <dt>LIVE</dt>
@@ -491,7 +538,7 @@ export default function HomePage({
                     <i />
                     <i />
                   </div>
-                  <span>平台 / 杜能环</span>
+                  <span>{currentSlide.browserLabel}</span>
                   <span className="qh-browser-live">
                     <i />
                     LIVE
@@ -508,7 +555,7 @@ export default function HomePage({
                 </div>
                 <div className="qh-image-caption">
                   <span>{currentSlide.note}</span>
-                  <span>地图 ↔ 竞租曲线</span>
+                  <span>{currentSlide.viewNote}</span>
                 </div>
               </div>
               <span className="qh-floating-label qh-floating-label--left">
@@ -562,13 +609,13 @@ export default function HomePage({
             <div className="qh-section-heading">
               <div>
                 <span className="qh-kicker">ABOUT / 关于平台</span>
-                <h2>从一个模型出发，读懂空间的选择。</h2>
+                <h2>三个模型，同一种把空间讲清楚的方式。</h2>
               </div>
               <aside className="qh-about-brief" aria-label="平台简介">
                 <span>平台简介</span>
                 <p>
-                  平台是一个面向地理学习与课堂演示的可视化工作台，把模型假设、
-                  空间结果与解释放在同一个界面里。
+                  平台把农业区位、网络分析与大气动力学的模型假设、空间结果与解释
+                  放在同一组可视化工作台里；三个实验室入口平级，可按课堂主题自由选择。
                 </p>
               </aside>
             </div>
@@ -602,7 +649,12 @@ export default function HomePage({
 
             <div className="qh-experiment-grid">
               <div className="qh-experiment-list">
-                <article className="qh-featured-experiment" id="experiment-lab">
+                <a
+                  aria-labelledby="lab-von-title"
+                  className="qh-featured-experiment qh-von-card"
+                  href="#von-thunen"
+                  id="experiment-lab"
+                >
                 <div className="qh-featured-copy">
                   <div className="qh-featured-meta">
                     <span>01 / 经济地理</span>
@@ -611,7 +663,7 @@ export default function HomePage({
                       可进入
                     </span>
                   </div>
-                  <h3>杜能环</h3>
+                  <h3 id="lab-von-title">杜能环</h3>
                   <p className="qh-featured-subtitle">农业区位交互实验室</p>
                   <p className="qh-featured-description">
                     从地租、距离和运费出发，编辑作物参数、拖动市场、绘制道路，
@@ -631,10 +683,10 @@ export default function HomePage({
                       <span>次自由尝试</span>
                     </div>
                   </div>
-                  <button className="qh-light-button" onClick={enterLab} type="button">
+                  <span className="qh-light-button">
                     进入杜能环实验室
                     <Icon name="arrowRight" size={17} />
-                  </button>
+                  </span>
                 </div>
                 <div className="qh-featured-visual" aria-hidden="true">
                   <span className="qh-ring-label qh-ring-label--one">园艺</span>
@@ -684,10 +736,12 @@ export default function HomePage({
                     <strong>aᵢ − bᵢd</strong>
                   </span>
                 </div>
-                </article>
+                </a>
 
-                <article
+                <a
+                  aria-labelledby="lab-dijkstra-title"
                   className="qh-featured-experiment qh-dijkstra-card"
+                  href="#dijkstra"
                   id="experiment-dijkstra"
                 >
                   <div className="qh-featured-copy">
@@ -698,7 +752,7 @@ export default function HomePage({
                         可进入
                       </span>
                     </div>
-                    <h3>Dijkstra</h3>
+                    <h3 id="lab-dijkstra-title">Dijkstra</h3>
                     <p className="qh-featured-subtitle">最短路径算法可视化实验室</p>
                     <p className="qh-featured-description">
                       编辑有向或无向图，逐步观察优先队列、距离表与松弛事件，
@@ -718,14 +772,10 @@ export default function HomePage({
                         <span>原生图编辑</span>
                       </div>
                     </div>
-                    <button
-                      className="qh-light-button"
-                      onClick={enterDijkstra}
-                      type="button"
-                    >
+                    <span className="qh-light-button">
                       进入 Dijkstra 实验室
                       <Icon name="arrowRight" size={17} />
-                    </button>
+                    </span>
                   </div>
                   <div className="qh-featured-visual qh-dijkstra-visual" aria-hidden="true">
                     <svg fill="none" viewBox="0 0 560 440">
@@ -797,10 +847,12 @@ export default function HomePage({
                       <strong>dist[A₇] = 8</strong>
                     </span>
                   </div>
-                </article>
+                </a>
 
-                <article
+                <a
+                  aria-labelledby="lab-atmosphere-title"
                   className="qh-featured-experiment qh-atmosphere-card"
+                  href="#atmosphere"
                   id="experiment-atmosphere"
                 >
                   <div className="qh-featured-copy">
@@ -811,7 +863,7 @@ export default function HomePage({
                         可进入
                       </span>
                     </div>
-                    <h3>大气受力</h3>
+                    <h3 id="lab-atmosphere-title">大气受力</h3>
                     <p className="qh-featured-subtitle">
                       水平运动的四力平衡与风场
                     </p>
@@ -833,14 +885,10 @@ export default function HomePage({
                         <span>二维平衡求解</span>
                       </div>
                     </div>
-                    <button
-                      className="qh-light-button"
-                      onClick={enterAtmosphere}
-                      type="button"
-                    >
+                    <span className="qh-light-button">
                       进入大气受力实验室
                       <Icon name="arrowRight" size={17} />
-                    </button>
+                    </span>
                   </div>
                   <div
                     className="qh-featured-visual qh-atmosphere-visual"
@@ -878,32 +926,9 @@ export default function HomePage({
                       <strong>ΣF = 0 → V, θ</strong>
                     </span>
                   </div>
-                </article>
+                </a>
               </div>
 
-              <aside aria-labelledby="next-modules" className="qh-next-modules">
-                <div className="qh-next-heading">
-                  <span className="qh-kicker">ROADMAP / 下一站</span>
-                  <h3 id="next-modules">平台还在生长</h3>
-                  <p>从农业区位到网络可达性，继续连接空间模型。</p>
-                </div>
-                {[
-                  { icon: "layers" as const, title: "产业空间", sub: "集聚、扩散与分工" },
-                  { icon: "road" as const, title: "区域联系", sub: "流动、网络与可达性" },
-                  { icon: "grid" as const, title: "城市体系", sub: "中心地与城镇网络" },
-                ].map((item) => (
-                  <div className="qh-next-card" key={item.title}>
-                    <span>
-                      <Icon name={item.icon} size={18} />
-                    </span>
-                    <div>
-                      <strong>{item.title}</strong>
-                      <small>{item.sub}</small>
-                    </div>
-                    <em>规划中</em>
-                  </div>
-                ))}
-              </aside>
             </div>
           </div>
         </section>

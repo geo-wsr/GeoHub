@@ -265,6 +265,24 @@ a {
   gap: 15px;
 }
 
+.app-home-button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.app-home-button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
 .app-theme-toggle {
   display: grid;
   flex: 0 0 auto;
