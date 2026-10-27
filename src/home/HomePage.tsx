@@ -18,6 +18,7 @@ interface HomePageProps {
   onEnterLab: () => void;
   onEnterDijkstra: () => void;
   onEnterAtmosphere: () => void;
+  atmosphereEnabled: boolean;
   onToggleTheme: () => void;
   theme: Theme;
 }
@@ -129,7 +130,7 @@ const SEARCH_INDEX: SearchEntry[] = [
   },
   {
     label: "大气水平运动 · 受力实验室",
-    detail: "实验 · 四力平衡、梯度风与边界层",
+    detail: "维护中 · 暂未开放交互演算",
     target: "experiment-atmosphere",
     keywords: "大气 气象 风 气压梯度力 地转偏向力 科里奥利力 离心力 摩擦力 梯度风",
     lab: "atmosphere",
@@ -159,6 +160,7 @@ export default function HomePage({
   onEnterLab,
   onEnterDijkstra,
   onEnterAtmosphere,
+  atmosphereEnabled,
   onToggleTheme,
   theme,
 }: HomePageProps) {
@@ -287,6 +289,8 @@ export default function HomePage({
   }
 
   const currentSlide = HERO_SLIDES[slideIndex];
+  const currentSlideEnabled =
+    currentSlide.lab !== "atmosphere" || atmosphereEnabled;
 
   return (
     <div className="qh-home" data-theme={theme}>
@@ -506,7 +510,7 @@ export default function HomePage({
                   onClick={() => enterLabByKey(currentSlide.lab)}
                   type="button"
                 >
-                  {currentSlide.cta}
+                  {currentSlideEnabled ? currentSlide.cta : "查看开放说明"}
                   <Icon name="arrowRight" size={17} />
                 </button>
                 <a className="qh-secondary-button" href="#experiments">
@@ -539,9 +543,13 @@ export default function HomePage({
                     <i />
                   </div>
                   <span>{currentSlide.browserLabel}</span>
-                  <span className="qh-browser-live">
+                  <span
+                    className={`qh-browser-live ${
+                      currentSlideEnabled ? "" : "is-paused"
+                    }`}
+                  >
                     <i />
-                    LIVE
+                    {currentSlideEnabled ? "LIVE" : "PAUSED"}
                   </span>
                 </div>
                 <div className="qh-browser-body">
@@ -552,6 +560,9 @@ export default function HomePage({
                     src={currentSlide.image}
                   />
                   <div className="qh-image-tint" aria-hidden="true" />
+                  {!currentSlideEnabled && (
+                    <span className="qh-slide-paused">暂未开放</span>
+                  )}
                 </div>
                 <div className="qh-image-caption">
                   <span>{currentSlide.note}</span>
@@ -858,9 +869,13 @@ export default function HomePage({
                   <div className="qh-featured-copy">
                     <div className="qh-featured-meta">
                       <span>03 / 大气动力学</span>
-                      <span className="qh-live-pill">
+                      <span
+                        className={`qh-live-pill ${
+                          atmosphereEnabled ? "" : "is-paused"
+                        }`}
+                      >
                         <i />
-                        可进入
+                        {atmosphereEnabled ? "可进入" : "维护中"}
                       </span>
                     </div>
                     <h3 id="lab-atmosphere-title">大气受力</h3>
@@ -886,7 +901,7 @@ export default function HomePage({
                       </div>
                     </div>
                     <span className="qh-light-button">
-                      进入大气受力实验室
+                      {atmosphereEnabled ? "进入大气受力实验室" : "查看开放说明"}
                       <Icon name="arrowRight" size={17} />
                     </span>
                   </div>

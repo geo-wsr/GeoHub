@@ -9,11 +9,15 @@ import { createRoot } from "react-dom/client";
 import "katex/dist/katex.min.css";
 import "./styles.css";
 import HomePage from "./home/HomePage";
+import { ATMOSPHERE_ENABLED } from "./platformFeatures";
 import { getInitialTheme, type Theme } from "./theme";
 
 const App = lazy(() => import("./App"));
 const DijkstraLab = lazy(() => import("./dijkstra/DijkstraLab"));
 const AtmosphericLab = lazy(() => import("./atmosphere/AtmosphericLab"));
+const AtmosphereUnavailable = lazy(
+  () => import("./atmosphere/AtmosphereUnavailable"),
+);
 
 type PlatformView = "home" | "von-thunen" | "dijkstra" | "atmosphere";
 
@@ -38,7 +42,9 @@ function PlatformRoot() {
           : nextView === "dijkstra"
             ? "Dijkstra 最短路径算法可视化实验室 · 平台"
             : nextView === "atmosphere"
-              ? "大气水平运动受力实验室 · 平台"
+              ? ATMOSPHERE_ENABLED
+                ? "大气水平运动受力实验室 · 平台"
+                : "大气受力实验室 · 暂未开放"
           : "泉盒子的地理可视化平台";
       window.scrollTo({ top: 0, behavior: "auto" });
     }
@@ -99,19 +105,30 @@ function PlatformRoot() {
   if (view === "atmosphere") {
     return (
       <Suspense fallback={<RouteLoading />}>
-        <AtmosphericLab
-          theme={theme}
-          onBackHome={() => {
-            window.location.hash = "home";
-          }}
-          onToggleTheme={toggleTheme}
-        />
+        {ATMOSPHERE_ENABLED ? (
+          <AtmosphericLab
+            theme={theme}
+            onBackHome={() => {
+              window.location.hash = "home";
+            }}
+            onToggleTheme={toggleTheme}
+          />
+        ) : (
+          <AtmosphereUnavailable
+            theme={theme}
+            onBackHome={() => {
+              window.location.hash = "home";
+            }}
+            onToggleTheme={toggleTheme}
+          />
+        )}
       </Suspense>
     );
   }
 
   return (
     <HomePage
+      atmosphereEnabled={ATMOSPHERE_ENABLED}
       onEnterLab={() => {
         window.location.hash = "von-thunen";
       }}

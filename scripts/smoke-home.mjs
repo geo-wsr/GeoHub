@@ -83,6 +83,11 @@ for (const [index, expected] of [
     `第 ${index + 1} 个主视觉不是 ${expected}`,
   );
 }
+assert(
+  (await page.locator(".qh-browser-live").innerText()).includes("PAUSED") &&
+    (await page.locator(".qh-slide-paused").innerText()).includes("暂未开放"),
+  "大气受力主视觉没有显示暂停开放状态",
+);
 
 const scrollBefore = await page.evaluate(() => window.scrollY);
 await page
@@ -120,8 +125,13 @@ await page
 await waitForHome();
 
 await page.locator('a[href="#atmosphere"]').click();
-await page.locator(".atf-app").waitFor();
-await page.locator(".atf-home-button").click();
+await page.locator(".atfu-page").waitFor();
+assert(
+  (await page.locator(".atf-app").count()) === 0 &&
+    (await page.locator(".atfu-copy").innerText()).includes("暂未开放"),
+  "大气受力路由没有由前端阻拦页截获",
+);
+await page.locator(".atfu-home-button").click();
 await waitForHome();
 
 const homePrimary = await page

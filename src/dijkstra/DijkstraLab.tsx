@@ -9,6 +9,7 @@ import {
 } from "react";
 import { Icon } from "../home/Icons";
 import { BrandMark } from "../home/Icons";
+import { ATMOSPHERE_ENABLED } from "../platformFeatures";
 import type { Theme } from "../theme";
 import {
   compileDijkstra,
@@ -1004,7 +1005,7 @@ export default function DijkstraLab({
             </button>
             <span aria-current="page">Dijkstra</span>
             <button onClick={onOpenAtmosphere} type="button">
-              大气受力
+              大气受力{ATMOSPHERE_ENABLED ? "" : " · 维护中"}
             </button>
           </nav>
           <div className="dk-top-actions">
