@@ -3,6 +3,10 @@
 面向地理学专业的学习与教学站点，分为**资料分享、论坛、可视化实验室**三个主板块。
 主站使用 Vue，实验室使用 React；后端只提供 REST API 与中文管理后台。
 
+> **唯一开发仓库：`D:\mywebsite`。** 原独立可视化项目的源码、截图和提交历史已并入
+> 本仓库：运行时源码位于 `frontend/src/visualization`，旧项目历史保存在
+> `archive/visualization-standalone` 分支。不要再单独维护或部署另一个可视化项目。
+
 | 层 | 技术 |
 | --- | --- |
 | 前台 | Vue 3 · Vue Router · React 19 · Vite · axios（设计令牌 + 深浅双主题） |
