@@ -17,8 +17,8 @@ const SLIDES = [
   {
     key: 'materials',
     eyebrow: '资料分享',
-    title: '把散落的地理资料，整理成可复用的学习目录',
-    desc: '课件、笔记、真题与地理数据按自然地理、人文地理和 GIS与遥感归类，支持标签检索、收藏与下载记录。',
+    title: '浏览和检索地理学习资料',
+    desc: '按分类和标签查找课件、笔记、真题与地理数据。登录后可下载、收藏、评论或上传资料。',
     cta: '进入资料分享',
     to: { name: 'materials' },
     bg: 'linear-gradient(135deg, var(--color-primary-soft), var(--bg-card) 62%)',
@@ -26,8 +26,8 @@ const SLIDES = [
   {
     key: 'forum',
     eyebrow: '论坛',
-    title: '把一个问题，变成一轮可以继续积累的讨论',
-    desc: '按地学方向发帖和交流，支持图片附件、楼层回复、置顶加精与站内通知，让答案留在可检索的社区里。',
+    title: '在地理学习板块中交流问题',
+    desc: '按自然地理、人文地理、GIS 与遥感等板块发帖，支持楼层回复、图片附件和站内通知。',
     cta: '进入论坛',
     to: { name: 'forum' },
     bg: 'linear-gradient(135deg, var(--color-secondary-soft), var(--bg-card) 62%)',
@@ -35,8 +35,8 @@ const SLIDES = [
   {
     key: 'lab',
     eyebrow: '可视化实验室',
-    title: '让空间模型在参数改变时被看见',
-    desc: '从人文区位到大气受力，再到 GIS与遥感网络分析，用可编辑模型、实时地图和图表解释地理过程。',
+    title: '用交互模型观察地理过程',
+    desc: '提供杜能环、Dijkstra 最短路径和大气水平运动受力三套实验，可调整参数并观察结果。',
     cta: '进入可视化实验室',
     to: { name: 'visualization' },
     bg: 'linear-gradient(135deg, var(--color-accent-soft), var(--bg-card) 62%)',

@@ -74,8 +74,12 @@ for (const viewport of viewports) {
     `${viewport.name} 首页介绍卡片顺序或名称不正确`,
   )
   check(
-    (await page.locator('.main-section-card').count()) === 3,
-    `${viewport.name} 首页没有显示三个主板块`,
+    (await page.locator('.main-section-card').count()) === 0,
+    `${viewport.name} 首页仍保留重复的三大板块卡片`,
+  )
+  check(
+    (await page.locator('.home-lab-card').count()) === 3,
+    `${viewport.name} 首页可视化实验室入口不是三个`,
   )
   check(
     (await page.locator('.brand__text').innerText()) === '泉盒子的GeoHub',
@@ -90,8 +94,18 @@ for (const viewport of viewports) {
   check(
     (await page.locator('.intro').count()) === 1 &&
       (await page.getByRole('heading', { name: /热门下载/ }).count()) === 1 &&
-      (await page.getByRole('heading', { name: /热门讨论/ }).count()) === 1,
-    `${viewport.name} 首页原有资料与讨论区块缺失`,
+      (await page.getByRole('heading', { name: /最新上传/ }).count()) === 1 &&
+      (await page.getByRole('heading', { name: /热门讨论/ }).count()) === 1 &&
+      (await page.getByRole('heading', { name: /可视化实验室/ }).count()) >= 1,
+    `${viewport.name} 首页资料、实验室或讨论区块缺失`,
+  )
+  const sectionOrder = await page.locator('main h2').allInnerTexts()
+  const latestIndex = sectionOrder.findIndex((text) => text.includes('最新上传'))
+  const labIndex = sectionOrder.findIndex((text) => text.includes('可视化实验室'))
+  const aboutIndex = sectionOrder.findIndex((text) => text.includes('面向地理学学习与教学'))
+  check(
+    latestIndex >= 0 && labIndex > latestIndex && aboutIndex > labIndex,
+    `${viewport.name} 首页没有按资料、实验室、关于本站的顺序组织`,
   )
 
   if (viewport.width <= 840) {
