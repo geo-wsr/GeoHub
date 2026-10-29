@@ -12,7 +12,6 @@ import SkeletonCard from '@/components/SkeletonCard.vue'
 import TopicCard from '@/components/TopicCard.vue'
 
 const categories = ref([])
-const hotMaterials = ref([])
 const latestMaterials = ref([])
 const hotTopics = ref([])
 const loading = ref(true)
@@ -41,14 +40,12 @@ const totalMaterials = computed(() =>
 
 onMounted(async () => {
   try {
-    const [categoryList, hot, latest, topics] = await Promise.all([
+    const [categoryList, latest, topics] = await Promise.all([
       api.categories(),
-      api.hotMaterials(),
       api.latestMaterials(),
       api.topics({ ordering: 'hot', page_size: 2 }),
     ])
     categories.value = categoryList
-    hotMaterials.value = hot
     latestMaterials.value = latest
     hotTopics.value = Array.isArray(topics) ? topics : topics.results
   } catch {
@@ -64,39 +61,33 @@ onMounted(async () => {
     <!-- 主要板块轮播：资料分享 / 论坛 / 可视化实验室 -->
     <HeroCarousel class="rise-in" />
 
-    <!-- 热门下载：横向滚动卡片组 -->
-    <section class="section">
-      <div class="section-head">
-        <h2>
-          热门下载
-          <span class="section-head__hint">按下载量排序</span>
-        </h2>
-        <RouterLink
-          class="section-head__more"
-          :to="{ name: 'materials', query: { ordering: 'downloads' } }"
-        >
-          查看全部
-          <AppIcon name="chevronRight" :size="14" />
-        </RouterLink>
+    <section class="section intro rise-in" aria-labelledby="about-title">
+      <div class="intro__head">
+        <div>
+          <span class="intro__kicker">关于本站</span>
+          <h2 id="about-title">面向地理学学习的资料共享与可视化平台</h2>
+        </div>
+        <p class="intro__stat num">已收录资料 {{ totalMaterials }} 份</p>
       </div>
 
-      <div v-if="loading" class="scroll-x">
-        <SkeletonCard v-for="index in 4" :key="index" class="scroll-x__item" />
+      <p class="intro__text">
+        GeoHub 将学习资料整理、课程讨论和地理可视化实验放在同一个网站中。各功能使用独立页面，
+        资料与讨论数据由站内账户、审核和通知系统管理。
+      </p>
+
+      <div class="intro__features">
+        <article v-for="item in SITE_FEATURES" :key="item.title">
+          <span class="intro__feature-icon">
+            <AppIcon :name="item.icon" :size="18" />
+          </span>
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.desc }}</p>
+        </article>
       </div>
-      <div v-else-if="hotMaterials.length" class="scroll-x">
-        <MaterialCard
-          v-for="item in hotMaterials"
-          :key="item.id"
-          :material="item"
-          horizontal
-          class="scroll-x__item"
-        />
-      </div>
-      <EmptyState
-        v-else
-        title="还没有下载记录"
-        description="上传第一份资料后，这里会显示下载排行。"
-      />
+
+      <p class="intro__note">
+        游客可以浏览公开资料与论坛内容；下载、评论、发帖和上传需要登录。用户提交的资料经管理员审核后公开。
+      </p>
     </section>
 
     <!-- 最新上传 -->
@@ -163,34 +154,6 @@ onMounted(async () => {
       </EmptyState>
     </section>
 
-    <section class="section intro rise-in" aria-labelledby="about-title">
-      <div class="intro__head">
-        <div>
-          <span class="intro__kicker">关于本站</span>
-          <h2 id="about-title">面向地理学学习与教学的资料与实验平台</h2>
-        </div>
-        <p class="intro__stat num">已收录资料 {{ totalMaterials }} 份</p>
-      </div>
-
-      <p class="intro__text">
-        GeoHub 将学习资料整理、课程讨论和地理可视化实验放在同一个网站中。各功能使用独立页面，
-        资料与讨论数据由站内账户、审核和通知系统管理。
-      </p>
-
-      <div class="intro__features">
-        <article v-for="item in SITE_FEATURES" :key="item.title">
-          <span class="intro__feature-icon">
-            <AppIcon :name="item.icon" :size="18" />
-          </span>
-          <h3>{{ item.title }}</h3>
-          <p>{{ item.desc }}</p>
-        </article>
-      </div>
-
-      <p class="intro__note">
-        游客可以浏览公开资料与论坛内容；下载、评论、发帖和上传需要登录。用户提交的资料经管理员审核后公开。
-      </p>
-    </section>
   </div>
 </template>
 

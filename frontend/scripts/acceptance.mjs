@@ -93,19 +93,21 @@ for (const viewport of viewports) {
   check(faviconStatus === 200, `${viewport.name} 选项卡图标加载失败`)
   check(
     (await page.locator('.intro').count()) === 1 &&
-      (await page.getByRole('heading', { name: /热门下载/ }).count()) === 1 &&
+      (await page.getByRole('heading', { name: /热门下载/ }).count()) === 0 &&
       (await page.getByRole('heading', { name: /最新上传/ }).count()) === 1 &&
       (await page.getByRole('heading', { name: /热门讨论/ }).count()) === 1 &&
       (await page.getByRole('heading', { name: /可视化实验室/ }).count()) >= 1,
     `${viewport.name} 首页资料、实验室或讨论区块缺失`,
   )
   const sectionOrder = await page.locator('main h2').allInnerTexts()
+  const aboutIndex = sectionOrder.findIndex((text) =>
+    text.includes('面向地理学学习的资料共享与可视化平台'),
+  )
   const latestIndex = sectionOrder.findIndex((text) => text.includes('最新上传'))
   const labIndex = sectionOrder.findIndex((text) => text.includes('可视化实验室'))
-  const aboutIndex = sectionOrder.findIndex((text) => text.includes('面向地理学学习与教学'))
   check(
-    latestIndex >= 0 && labIndex > latestIndex && aboutIndex > labIndex,
-    `${viewport.name} 首页没有按资料、实验室、关于本站的顺序组织`,
+    aboutIndex >= 0 && latestIndex > aboutIndex && labIndex > latestIndex,
+    `${viewport.name} 首页没有按关于本站、资料、实验室的顺序组织`,
   )
 
   if (viewport.width <= 840) {
