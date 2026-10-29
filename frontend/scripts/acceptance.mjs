@@ -65,6 +65,15 @@ for (const viewport of viewports) {
 
   check((await page.locator('.main-nav__link').count()) === 3, `${viewport.name} 主导航不是三个板块`)
   check(
+    (await page.locator('.hero__dot').count()) === 3,
+    `${viewport.name} 首页介绍卡片不是三个主要板块`,
+  )
+  check(
+    (await page.locator('.hero__eyebrow').allInnerTexts()).join(',') ===
+      '资料分享,论坛,可视化实验室',
+    `${viewport.name} 首页介绍卡片顺序或名称不正确`,
+  )
+  check(
     (await page.locator('.main-section-card').count()) === 3,
     `${viewport.name} 首页没有显示三个主板块`,
   )
@@ -101,7 +110,11 @@ for (const viewport of viewports) {
   await gotoAndSettle(page, '/visualization', '.visualization-page')
   check(
     (await page.locator('.lab-group').count()) === 3,
-    `${viewport.name} 实验室没有分为自然、人文、地信三组`,
+    `${viewport.name} 实验室没有分为自然、人文、GIS与遥感三组`,
+  )
+  check(
+    (await page.locator('.lab-group h2').allInnerTexts()).includes('GIS与遥感'),
+    `${viewport.name} 实验室分类没有改为 GIS与遥感`,
   )
   check((await page.locator('.lab-card').count()) === 3, `${viewport.name} 实验室卡片数量错误`)
   check(

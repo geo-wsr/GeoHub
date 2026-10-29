@@ -5,8 +5,9 @@ import { RouterLink } from 'vue-router'
 import AppIcon from './AppIcon.vue'
 
 /**
- * 首页主题大图轮播。
+ * 首页主要板块轮播。
  *
+ * 三张卡片分别对应资料分享、论坛和可视化实验室。
  * 插画用内联 SVG 画（不是位图）：任意分辨率都清晰、体积几乎为零，
  * 颜色全部走设计令牌，浅色/深色主题切换时自动适配。
  * 交互：自动播放（6s）+ 左右箭头 + 圆点 + 触摸/鼠标左右滑动；
@@ -14,40 +15,31 @@ import AppIcon from './AppIcon.vue'
  */
 const SLIDES = [
   {
-    key: 'relief',
-    eyebrow: '自然地理',
-    title: '从等高线读懂山川',
-    desc: '地貌、气候、水文、土壤、植被 —— 课件、笔记与真题按主题归类，随取随用。',
-    cta: '浏览自然地理资料',
-    query: { category: 'physical' },
+    key: 'materials',
+    eyebrow: '资料分享',
+    title: '把散落的地理资料，整理成可复用的学习目录',
+    desc: '课件、笔记、真题与地理数据按自然地理、人文地理和 GIS与遥感归类，支持标签检索、收藏与下载记录。',
+    cta: '进入资料分享',
+    to: { name: 'materials' },
     bg: 'linear-gradient(135deg, var(--color-primary-soft), var(--bg-card) 62%)',
   },
   {
-    key: 'gis',
-    eyebrow: 'GIS 与遥感',
-    title: '把地球装进一张图',
-    desc: '遥感影像、空间分析、专题制图，从软件入门到项目实战的资料与经验都在这里。',
-    cta: '看看 GIS 资料',
-    query: { category: 'gis' },
+    key: 'forum',
+    eyebrow: '论坛',
+    title: '把一个问题，变成一轮可以继续积累的讨论',
+    desc: '按地学方向发帖和交流，支持图片附件、楼层回复、置顶加精与站内通知，让答案留在可检索的社区里。',
+    cta: '进入论坛',
+    to: { name: 'forum' },
     bg: 'linear-gradient(135deg, var(--color-secondary-soft), var(--bg-card) 62%)',
   },
   {
-    key: 'human',
-    eyebrow: '人文地理',
-    title: '人口、城市与经济的地理逻辑',
-    desc: '城市群、人口迁移、区域差异，用案例和数据把课本上的结论讲透。',
-    cta: '进入人文地理板块',
-    query: { category: 'human' },
+    key: 'lab',
+    eyebrow: '可视化实验室',
+    title: '让空间模型在参数改变时被看见',
+    desc: '从人文区位到大气受力，再到 GIS与遥感网络分析，用可编辑模型、实时地图和图表解释地理过程。',
+    cta: '进入可视化实验室',
+    to: { name: 'visualization' },
     bg: 'linear-gradient(135deg, var(--color-accent-soft), var(--bg-card) 62%)',
-  },
-  {
-    key: 'math',
-    eyebrow: '数理基础',
-    title: '把公式用在地图上',
-    desc: '高等数学、线性代数、概率统计、大学物理 —— 地学专业的数理地基，例题与习题解析都在这。',
-    cta: '查看数理基础资料',
-    query: { category: 'math' },
-    bg: 'linear-gradient(135deg, var(--bg-hover), var(--bg-card) 62%)',
   },
 ]
 
@@ -121,7 +113,7 @@ onBeforeUnmount(() => {
     class="hero"
     role="region"
     aria-roledescription="carousel"
-    aria-label="地理学主题轮播"
+    aria-label="泉盒子的GeoHub主要板块"
     @mouseenter="paused = true; stopTimer()"
     @mouseleave="paused = false; startTimer()"
     @focusin="paused = true; stopTimer()"
@@ -146,156 +138,60 @@ onBeforeUnmount(() => {
           <p class="hero__desc">{{ slide.desc }}</p>
           <RouterLink
             class="btn btn--primary hero__cta"
-            :to="{ name: 'materials', query: slide.query }"
+            :to="slide.to"
           >
             {{ slide.cta }}
             <AppIcon name="arrowRight" :size="16" />
           </RouterLink>
         </div>
 
-        <!-- 内联矢量插画：等高线山体 / 遥感网格 / 城市与人口 / 坐标系与曲线 -->
+        <!-- 内联矢量插画：资料目录 / 讨论网络 / 空间模型 -->
         <div class="hero__art" aria-hidden="true">
-          <svg v-if="slide.key === 'relief'" viewBox="0 0 320 220" fill="none">
-            <circle cx="248" cy="54" r="26" fill="var(--color-accent-soft)" />
-            <circle
-              cx="248"
-              cy="54"
-              r="26"
-              stroke="var(--color-accent)"
-              stroke-width="1.4"
-              opacity="0.7"
-            />
-            <path
-              d="M0 196 L78 108 L124 152 L176 84 L232 150 L320 96 L320 220 L0 220 Z"
-              fill="var(--color-primary)"
-              opacity="0.14"
-            />
-            <path
-              d="M0 200 L70 132 L118 170 L170 112 L226 168 L320 118"
-              stroke="var(--color-primary)"
-              stroke-width="2.2"
-              stroke-linejoin="round"
-            />
-            <g stroke="var(--color-primary)" stroke-width="1.1" opacity="0.45">
-              <ellipse cx="176" cy="120" rx="52" ry="18" />
-              <ellipse cx="176" cy="120" rx="34" ry="11" />
-              <ellipse cx="176" cy="120" rx="16" ry="5" />
-              <ellipse cx="78" cy="150" rx="40" ry="13" />
-              <ellipse cx="78" cy="150" rx="20" ry="6" />
-            </g>
+          <svg v-if="slide.key === 'materials'" viewBox="0 0 320 220" fill="none">
+            <rect x="72" y="38" width="166" height="142" rx="8" fill="var(--bg-card)" opacity="0.55" />
+            <rect x="56" y="50" width="166" height="142" rx="8" fill="var(--bg-card)" stroke="var(--color-secondary)" opacity="0.7" />
+            <rect x="40" y="62" width="166" height="142" rx="8" fill="var(--bg-card)" stroke="var(--color-primary)" stroke-width="1.5" />
+            <path d="M62 86h58M62 101h96M62 116h80" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" opacity="0.55" />
+            <path d="M62 148c18-22 37 17 55-6s39 13 60-8" stroke="var(--color-secondary)" stroke-width="1.5" stroke-linecap="round" />
+            <ellipse cx="108" cy="148" rx="24" ry="9" stroke="var(--color-secondary)" stroke-width="1" opacity="0.55" />
+            <ellipse cx="160" cy="148" rx="18" ry="7" stroke="var(--color-secondary)" stroke-width="1" opacity="0.55" />
+            <circle cx="254" cy="58" r="24" fill="var(--color-accent-soft)" stroke="var(--color-accent)" />
+            <path d="M254 44v28M240 58h28" stroke="var(--color-accent)" stroke-width="1.5" />
           </svg>
 
-          <svg v-else-if="slide.key === 'gis'" viewBox="0 0 320 220" fill="none">
-            <g stroke="var(--color-secondary)" stroke-width="1" opacity="0.35">
-              <path d="M32 24 H296 M32 62 H296 M32 100 H296 M32 138 H296 M32 176 H296" />
-              <path d="M48 16 V188 M96 16 V188 M144 16 V188 M192 16 V188 M240 16 V188 M288 16 V188" />
-            </g>
-            <circle
-              cx="164"
-              cy="104"
-              r="52"
-              stroke="var(--color-secondary)"
-              stroke-width="2"
-            />
-            <ellipse
-              cx="164"
-              cy="104"
-              rx="52"
-              ry="20"
-              stroke="var(--color-secondary)"
-              stroke-width="1.2"
-              opacity="0.6"
-            />
-            <ellipse
-              cx="164"
-              cy="104"
-              rx="20"
-              ry="52"
-              stroke="var(--color-secondary)"
-              stroke-width="1.2"
-              opacity="0.6"
-            />
-            <ellipse
-              cx="164"
-              cy="120"
-              rx="132"
-              ry="46"
-              stroke="var(--color-accent)"
-              stroke-width="1.2"
-              stroke-dasharray="5 6"
-              opacity="0.8"
-            />
-            <circle cx="252" cy="94" r="5" fill="var(--color-accent)" />
-            <g fill="var(--color-primary)" opacity="0.5">
-              <rect x="86" y="146" width="14" height="14" />
-              <rect x="104" y="146" width="14" height="14" opacity="0.7" />
-              <rect x="86" y="164" width="14" height="14" opacity="0.45" />
-              <rect x="104" y="164" width="14" height="14" opacity="0.3" />
-            </g>
-          </svg>
-
-          <svg v-else-if="slide.key === 'human'" viewBox="0 0 320 220" fill="none">
-            <g fill="var(--color-primary)" opacity="0.18">
-              <rect x="36" y="120" width="26" height="76" />
-              <rect x="70" y="92" width="30" height="104" />
-              <rect x="108" y="132" width="22" height="64" />
-              <rect x="138" y="70" width="34" height="126" />
-              <rect x="180" y="108" width="26" height="88" />
-              <rect x="214" y="86" width="30" height="110" />
-              <rect x="252" y="126" width="24" height="70" />
-            </g>
-            <path
-              d="M36 150 L96 118 L150 96 L206 74 L266 52"
-              stroke="var(--color-accent)"
-              stroke-width="2.2"
-              stroke-linecap="round"
-            />
-            <g fill="var(--color-accent)">
-              <circle cx="36" cy="150" r="3.4" />
-              <circle cx="96" cy="118" r="3.4" />
-              <circle cx="150" cy="96" r="3.4" />
-              <circle cx="206" cy="74" r="3.4" />
-              <circle cx="266" cy="52" r="3.4" />
-            </g>
-            <g fill="var(--color-secondary)" opacity="0.55">
-              <circle cx="60" cy="176" r="3" />
-              <circle cx="92" cy="188" r="3" />
-              <circle cx="128" cy="172" r="3" />
-              <circle cx="164" cy="186" r="3" />
-              <circle cx="200" cy="170" r="3" />
-              <circle cx="236" cy="184" r="3" />
-            </g>
+          <svg v-else-if="slide.key === 'forum'" viewBox="0 0 320 220" fill="none">
+            <path d="M86 78 158 118M170 118l62-48M170 132l58 42" stroke="var(--color-secondary)" stroke-width="1.5" opacity="0.45" />
+            <rect x="24" y="52" width="92" height="54" rx="10" fill="var(--bg-card)" stroke="var(--color-primary)" stroke-width="1.4" />
+            <path d="M48 116l9 15v-15" fill="var(--bg-card)" stroke="var(--color-primary)" stroke-width="1.4" />
+            <path d="M45 72h49M45 86h34" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" opacity="0.55" />
+            <rect x="128" y="98" width="92" height="54" rx="10" fill="var(--bg-card)" stroke="var(--color-accent)" stroke-width="1.5" />
+            <path d="M198 152l-7 15 19-15" fill="var(--bg-card)" stroke="var(--color-accent)" stroke-width="1.5" />
+            <path d="M150 118h48M150 132h32" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" opacity="0.7" />
+            <rect x="218" y="34" width="78" height="46" rx="9" fill="var(--bg-card)" stroke="var(--color-secondary)" stroke-width="1.3" />
+            <path d="M236 52h42M236 65h28" stroke="var(--color-secondary)" stroke-width="1.8" stroke-linecap="round" opacity="0.6" />
+            <circle cx="106" cy="173" r="5" fill="var(--color-primary)" opacity="0.55" />
+            <circle cx="126" cy="181" r="4" fill="var(--color-secondary)" opacity="0.45" />
+            <circle cx="144" cy="175" r="3" fill="var(--color-accent)" opacity="0.55" />
           </svg>
 
           <svg v-else viewBox="0 0 320 220" fill="none">
-            <g stroke="var(--color-secondary)" stroke-width="1" opacity="0.28">
-              <path d="M52 44 H296 M52 76 H296 M52 108 H296 M52 140 H296 M52 172 H296" />
-              <path d="M84 28 V192 M116 28 V192 M148 28 V192 M180 28 V192 M212 28 V192 M244 28 V192 M276 28 V192" />
+            <g stroke="var(--color-secondary)" stroke-width="1" opacity="0.25">
+              <path d="M28 38H292M28 76H292M28 114H292M28 152H292M28 190H292" />
+              <path d="M48 24V198M98 24V198M148 24V198M198 24V198M248 24V198M298 24V198" />
             </g>
-            <path d="M52 192 H300" stroke="var(--color-primary)" stroke-width="1.8" />
-            <path d="M52 196 V30" stroke="var(--color-primary)" stroke-width="1.8" />
-            <path d="M300 192 l-9 -4 v8 z" fill="var(--color-primary)" />
-            <path d="M52 30 l-4 9 h8 z" fill="var(--color-primary)" />
-            <path
-              d="M52 166 C 92 62 128 58 164 116 S 244 178 292 84"
-              stroke="var(--color-accent)"
-              stroke-width="2.2"
-              stroke-linecap="round"
-            />
-            <path
-              d="M52 186 L292 62"
-              stroke="var(--color-secondary)"
-              stroke-width="1.4"
-              stroke-dasharray="6 5"
-              opacity="0.75"
-            />
-            <g fill="var(--color-accent)">
-              <circle cx="92" cy="132" r="3.4" />
-              <circle cx="140" cy="104" r="3.4" />
-              <circle cx="188" cy="120" r="3.4" />
-              <circle cx="236" cy="112" r="3.4" />
-              <circle cx="276" cy="92" r="3.4" />
+            <circle cx="148" cy="112" r="58" stroke="var(--color-primary)" stroke-width="1.8" />
+            <circle cx="148" cy="112" r="39" stroke="var(--color-primary)" stroke-width="1.2" opacity="0.65" />
+            <circle cx="148" cy="112" r="19" stroke="var(--color-primary)" stroke-width="1.2" opacity="0.45" />
+            <circle cx="148" cy="112" r="5" fill="var(--color-accent)" />
+            <path d="M66 178l42-48 36 24 48-70 62 34" stroke="var(--color-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+            <g fill="var(--bg-card)" stroke="var(--color-accent)" stroke-width="2">
+              <circle cx="108" cy="130" r="6" />
+              <circle cx="144" cy="154" r="6" />
+              <circle cx="192" cy="84" r="6" />
+              <circle cx="254" cy="118" r="6" />
             </g>
+            <path d="M222 166v32M208 198h28" stroke="var(--color-secondary)" stroke-width="1.6" />
+            <path d="M222 166v-8M214 174h-8M238 174h8M222 190v8" stroke="var(--color-secondary)" stroke-width="1.2" opacity="0.65" />
           </svg>
         </div>
       </article>
@@ -368,16 +264,19 @@ onBeforeUnmount(() => {
 
 .hero__title {
   margin: 14px 0 8px;
-  font-size: var(--fs-h1);
+  font-size: clamp(28px, 2.8vw, 38px);
   font-weight: var(--fw-semibold);
-  line-height: var(--lh-title);
+  line-height: 1.25;
+  letter-spacing: -0.025em;
   color: var(--text-1);
+  text-wrap: balance;
 }
 
 .hero__desc {
   margin: 0 0 20px;
   color: var(--text-2);
   line-height: var(--lh-body);
+  text-wrap: pretty;
 }
 
 .hero__art {

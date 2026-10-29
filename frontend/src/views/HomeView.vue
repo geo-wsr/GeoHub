@@ -42,7 +42,7 @@ const MAIN_SECTIONS = [
     icon: 'layers',
     title: '可视化实验室',
     eyebrow: 'VISUAL LAB',
-    desc: '按自然地理、人文地理与地信三个方向，用可编辑模型和实时图表解释空间关系。',
+    desc: '按自然地理、人文地理与 GIS与遥感三个方向，用可编辑模型和实时图表解释空间关系。',
     to: { name: 'visualization' },
     action: '进入实验室',
   },
@@ -84,7 +84,7 @@ onMounted(async () => {
 
 <template>
   <div class="container home">
-    <!-- 主题大图轮播：等高线山体 / 遥感网格 / 城市与人口 / 岩层剖面 -->
+    <!-- 主要板块轮播：资料分享 / 论坛 / 可视化实验室 -->
     <HeroCarousel class="rise-in" />
 
     <section class="section main-sections" aria-labelledby="main-sections-title">

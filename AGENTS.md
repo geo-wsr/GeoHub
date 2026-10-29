@@ -22,7 +22,7 @@
 - 语言与时区：`LANGUAGE_CODE = 'zh-hans'`、`TIME_ZONE = 'Asia/Shanghai'`
 - 三级角色：游客（只读）/ 注册用户（下载、评论、发帖、提交上传）/ 管理员（审核、管理全站内容）
 - 前台三大板块：资料分享 / 论坛 / 可视化实验室；首页由站点标志进入
-- 可视化实验室按自然地理 / 人文地理 / 地信分类，现含杜能环、Dijkstra、大气受力三套实验
+- 可视化实验室按自然地理 / 人文地理 / GIS与遥感分类，现含杜能环、Dijkstra、大气受力三套实验
 - 已是 git 仓库：分支 `main`，首个提交 `761034d`，远端 `https://github.com/geo-wsr/GeoHub.git`
 - 生产环境是「境外 Serverless」，**不需要 ICP 备案**；只要换成境内服务器/境内 CDN 就必须备案
 - 所有源码使用 UTF-8，注释与界面文案为中文
@@ -339,7 +339,7 @@ print([hex(ord(c)) for c in value])
 - **Serverless 部署链路（方案 2，免 ICP 备案）**：根目录 `render.yaml` 蓝图（Render 免费实例 +
   gunicorn + 启动时自动迁移）、`DATABASE_URL` 连 Neon Postgres、`AWS_*` 一组变量切到 Cloudflare R2、
   WhiteNoise 托管 `/static/`；`.github/workflows/deploy-backend.yml` 已改为触发 Render 部署钩子
-- **首页视觉**：`HeroCarousel.vue` 四张主题大图（自然地理/GIS/人文地理/地质地貌），
+- **首页视觉**：`HeroCarousel.vue` 三张主要板块卡片（资料分享/论坛/可视化实验室），
   插画是**内联 SVG**（不是位图，任意分辨率清晰、体积几乎为零），带自动播放、圆点、
   左右箭头与触摸滑动，悬停/页面隐藏/系统"减少动效"时自动暂停；下方是网站介绍 + 功能卡片
 - **进站登录引导**：游客首次访问弹 `LoginPrompt.vue`（可关闭，sessionStorage 记标记），

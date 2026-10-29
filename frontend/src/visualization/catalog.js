@@ -53,7 +53,7 @@ export const LAB_GROUPS = [
   },
   {
     key: 'gis',
-    title: '地信',
+    title: 'GIS与遥感',
     english: 'GEOGRAPHIC INFORMATION SCIENCE',
     icon: 'map',
     description: '用网络、算法与空间数据理解可达性和空间联系，把计算过程变成可以追踪的图。',
