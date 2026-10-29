@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -135,7 +136,14 @@ export default function AtmosphericLab({
       ? true
       : !window.matchMedia("(max-width: 1080px)").matches,
   );
+  const [compactLayout, setCompactLayout] = useState(() =>
+    typeof window === "undefined"
+      ? false
+      : window.matchMedia("(max-width: 1080px)").matches,
+  );
   const [announcement, setAnnouncement] = useState("");
+  const controlsPanelRef = useRef<HTMLElement>(null);
+  const controlsTriggerRef = useRef<HTMLButtonElement>(null);
 
   const state = useMemo(
     () => deriveAtmosphereState(config, center, 212),
@@ -224,6 +232,69 @@ export default function AtmosphericLab({
     );
   }, [balanceStatus, pressureLabel, state.windSpeed]);
 
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 1080px)");
+    const syncLayout = () => setCompactLayout(media.matches);
+    syncLayout();
+    media.addEventListener("change", syncLayout);
+    return () => media.removeEventListener("change", syncLayout);
+  }, []);
+
+  useEffect(() => {
+    if (!controlsOpen || !compactLayout) return;
+    const panel = controlsPanelRef.current;
+    if (!panel) return;
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusableSelector =
+      'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusables = () =>
+      [...panel.querySelectorAll<HTMLElement>(focusableSelector)].filter(
+        (element) =>
+          element.getClientRects().length > 0 &&
+          window.getComputedStyle(element).visibility !== "hidden",
+      );
+    panel.querySelector<HTMLButtonElement>(".atf-panel-close")?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setControlsOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const items = focusables();
+      if (items.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      } else if (!panel.contains(document.activeElement)) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      window.requestAnimationFrame(() => {
+        if (controlsTriggerRef.current) {
+          controlsTriggerRef.current.focus();
+        } else if (previousFocus instanceof HTMLElement) {
+          previousFocus.focus();
+        }
+      });
+    };
+  }, [compactLayout, controlsOpen]);
+
   return (
     <div className="atf-app" data-theme={theme}>
       <header className="atf-topbar">
@@ -268,12 +339,6 @@ export default function AtmosphericLab({
       <main>
         <section className="atf-hero">
           <div className="atf-hero-copy">
-            <div className="atf-hero-eyebrow">
-              <span className="atf-live-dot" />
-              <span>FIELD LAB 03 · 大气动力学</span>
-              <span className="atf-eyebrow-line" />
-              <span>HORIZONTAL FORCES</span>
-            </div>
             <h1>
               大气水平运动受力实验室：
               <br />
@@ -308,22 +373,22 @@ export default function AtmosphericLab({
           </div>
           <div className="atf-hero-metrics" aria-label="当前模型摘要">
             <div>
-              <span>PRESSURE</span>
+              <span>气压梯度</span>
               <strong>{config.pressureGradientHpa100km.toFixed(2)}</strong>
               <small>hPa / 100 km</small>
             </div>
             <div>
-              <span>WIND</span>
+              <span>风速</span>
               <strong>{state.windSpeed.toFixed(1)}</strong>
               <small>m / s</small>
             </div>
             <div>
-              <span>NET FORCE</span>
+              <span>合力</span>
               <strong>{toDisplayForce(state.netMagnitude)}</strong>
               <small>10⁻³ m / s²</small>
             </div>
             <div className="atf-hero-status">
-              <span>MODEL STATE</span>
+              <span>模型状态</span>
               <strong>
                 <i />
                 {balanceStatus}
@@ -335,10 +400,6 @@ export default function AtmosphericLab({
 
         <section className="atf-intro" aria-labelledby="atf-intro-title">
           <div className="atf-intro-main">
-            <div className="atf-section-kicker">
-              <span>01</span>
-              同一支风，四种作用
-            </div>
             <h2 id="atf-intro-title">
               风不是被某一个力“推出来”
               <br />
@@ -350,13 +411,12 @@ export default function AtmosphericLab({
             </p>
           </div>
           <div className="atf-force-intro-grid">
-            {FORCE_INTRO.map((force, index) => (
+            {FORCE_INTRO.map((force) => (
               <article
                 className={`atf-force-intro atf-force-intro--${force.key}`}
                 key={force.key}
               >
                 <div>
-                  <span>0{index + 1}</span>
                   <strong>{force.name}</strong>
                 </div>
                 <code>{force.formula}</code>
@@ -389,10 +449,6 @@ export default function AtmosphericLab({
           <section className="atf-formulas" aria-label="核心公式">
             <header>
               <div>
-                <span className="atf-section-kicker">
-                  <span>02</span>
-                  公式与实时变量
-                </span>
                 <h2>所有箭头都由这些关系计算</h2>
               </div>
               <span className="atf-formula-live">
@@ -451,13 +507,9 @@ export default function AtmosphericLab({
             <article className="atf-visual-card">
               <header className="atf-card-header">
                 <div>
-                  <span className="atf-section-kicker">
-                    <span>03</span>
-                    受力与风场
-                  </span>
                   <h2>空气质点的实时矢量合成</h2>
                 </div>
-                <div className="atf-card-status">
+                <div className="atf-card-status" aria-live="polite">
                   <span className={nearBalance ? "is-balanced" : ""}>
                     <i />
                     {balanceStatus}
@@ -469,6 +521,17 @@ export default function AtmosphericLab({
                   >
                     流线 {animationOn ? "暂停" : "播放"}
                   </button>
+                  {!controlsOpen && (
+                    <button
+                      ref={controlsTriggerRef}
+                      type="button"
+                      aria-expanded={false}
+                      aria-controls="atmosphere-control-panel"
+                      onClick={() => setControlsOpen(true)}
+                    >
+                      展开参数
+                    </button>
+                  )}
                 </div>
               </header>
               <ForceCanvas
@@ -512,10 +575,6 @@ export default function AtmosphericLab({
 
             <article className="atf-concept-card">
               <div>
-                <span className="atf-section-kicker">
-                  <span>04</span>
-                  读图结论
-                </span>
                 <h2>先看力的方向，再解释风为什么偏</h2>
               </div>
               <div className="atf-concept-columns">
@@ -544,17 +603,6 @@ export default function AtmosphericLab({
             </article>
           </div>
 
-          {!controlsOpen && (
-            <button
-              type="button"
-              className="atf-controls-open"
-              onClick={() => setControlsOpen(true)}
-            >
-              展开参数与控制
-              <span aria-hidden="true">＋</span>
-            </button>
-          )}
-
           {controlsOpen && (
             <>
               <button
@@ -563,13 +611,16 @@ export default function AtmosphericLab({
                 aria-label="关闭参数与控制面板"
                 onClick={() => setControlsOpen(false)}
               />
-              <aside className="atf-control-panel" aria-label="参数与控制">
+              <aside
+                ref={controlsPanelRef}
+                id="atmosphere-control-panel"
+                className="atf-control-panel"
+                aria-label="参数与控制"
+                role={compactLayout ? "dialog" : undefined}
+                aria-modal={compactLayout ? true : undefined}
+              >
                 <header>
                   <div>
-                    <span className="atf-section-kicker">
-                      <span>05</span>
-                      CONTROL DECK
-                    </span>
                     <h2>参数与控制</h2>
                   </div>
                   <button
@@ -588,7 +639,11 @@ export default function AtmosphericLab({
                       <span>平衡预设</span>
                       <small>可继续修改</small>
                     </div>
-                    <div className="atf-preset-grid">
+                    <div
+                      className="atf-preset-grid"
+                      role="group"
+                      aria-label="平衡预设"
+                    >
                       {ATMOSPHERE_PRESETS.map((preset, index) => (
                         <button
                           type="button"
@@ -596,6 +651,7 @@ export default function AtmosphericLab({
                           className={
                             activePresetId === preset.id ? "is-active" : ""
                           }
+                          aria-pressed={activePresetId === preset.id}
                           onClick={() => loadPreset(preset)}
                         >
                           <span>0{index + 1}</span>
@@ -611,12 +667,17 @@ export default function AtmosphericLab({
                       <span>求解方式</span>
                       <small>{balanceStatus}</small>
                     </div>
-                    <div className="atf-segmented">
+                    <div
+                      className="atf-segmented"
+                      role="group"
+                      aria-label="风速求解方式"
+                    >
                       <button
                         type="button"
                         className={
                           config.windMode === "free" ? "is-active" : ""
                         }
+                        aria-pressed={config.windMode === "free"}
                         onClick={() =>
                           updateConfig({
                             windMode: "free",
@@ -632,6 +693,7 @@ export default function AtmosphericLab({
                         className={
                           config.windMode === "balance" ? "is-active" : ""
                         }
+                        aria-pressed={config.windMode === "balance"}
                         onClick={() => updateConfig({ windMode: "balance" })}
                       >
                         由平衡计算 V
@@ -686,12 +748,17 @@ export default function AtmosphericLab({
                       <span>等压线几何</span>
                       <small>{pressureLabel}</small>
                     </div>
-                    <div className="atf-segmented">
+                    <div
+                      className="atf-segmented"
+                      role="group"
+                      aria-label="等压线几何"
+                    >
                       <button
                         type="button"
                         className={
                           config.geometry === "parallel" ? "is-active" : ""
                         }
+                        aria-pressed={config.geometry === "parallel"}
                         onClick={() =>
                           updateConfig({ geometry: "parallel" })
                         }
@@ -703,6 +770,7 @@ export default function AtmosphericLab({
                         className={
                           config.geometry === "circular" ? "is-active" : ""
                         }
+                        aria-pressed={config.geometry === "circular"}
                         onClick={() =>
                           updateConfig({ geometry: "circular" })
                         }
@@ -711,12 +779,17 @@ export default function AtmosphericLab({
                       </button>
                     </div>
                     {config.geometry === "circular" && (
-                      <div className="atf-segmented atf-segmented--compact">
+                      <div
+                        className="atf-segmented atf-segmented--compact"
+                        role="group"
+                        aria-label="气压中心类型"
+                      >
                         <button
                           type="button"
                           className={
                             config.pressureCenter === "low" ? "is-active" : ""
                           }
+                          aria-pressed={config.pressureCenter === "low"}
                           onClick={() =>
                             updateConfig({ pressureCenter: "low" })
                           }
@@ -728,6 +801,7 @@ export default function AtmosphericLab({
                           className={
                             config.pressureCenter === "high" ? "is-active" : ""
                           }
+                          aria-pressed={config.pressureCenter === "high"}
                           onClick={() =>
                             updateConfig({ pressureCenter: "high" })
                           }
@@ -736,12 +810,17 @@ export default function AtmosphericLab({
                         </button>
                       </div>
                     )}
-                    <div className="atf-segmented atf-segmented--compact">
+                    <div
+                      className="atf-segmented atf-segmented--compact"
+                      role="group"
+                      aria-label="半球"
+                    >
                       <button
                         type="button"
                         className={
                           config.hemisphere === 1 ? "is-active" : ""
                         }
+                        aria-pressed={config.hemisphere === 1}
                         onClick={() => updateConfig({ hemisphere: 1 })}
                       >
                         北半球
@@ -751,6 +830,7 @@ export default function AtmosphericLab({
                         className={
                           config.hemisphere === -1 ? "is-active" : ""
                         }
+                        aria-pressed={config.hemisphere === -1}
                         onClick={() => updateConfig({ hemisphere: -1 })}
                       >
                         南半球

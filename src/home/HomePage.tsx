@@ -130,7 +130,7 @@ const SEARCH_INDEX: SearchEntry[] = [
   },
   {
     label: "大气水平运动 · 受力实验室",
-    detail: "维护中 · 暂未开放交互演算",
+    detail: "实验 · 四力平衡、风场与边界层偏转",
     target: "experiment-atmosphere",
     keywords: "大气 气象 风 气压梯度力 地转偏向力 科里奥利力 离心力 摩擦力 梯度风",
     lab: "atmosphere",

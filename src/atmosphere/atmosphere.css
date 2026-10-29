@@ -6,7 +6,7 @@
   --atf-map: #f8f6ef;
   --atf-ink: #22302a;
   --atf-muted: #65726c;
-  --atf-faint: #89928d;
+  --atf-faint: #637168;
   --atf-primary: #3b6ea8;
   --atf-primary-deep: #274f7b;
   --atf-primary-soft: #e2ecf4;
@@ -140,6 +140,7 @@
 
 .atf-brand {
   display: inline-flex;
+  min-height: 44px;
   align-items: center;
   gap: 12px;
   padding: 0;
@@ -162,6 +163,10 @@
   background: var(--atf-primary);
   border-radius: 50%;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.24);
+}
+
+.atf-app[data-theme="dark"] .atf-brand-mark {
+  color: #0f161c;
 }
 
 .atf-brand > span:last-child {
@@ -243,11 +248,32 @@
   margin-inline: auto;
 }
 
+.atf-app main {
+  display: flex;
+  flex-direction: column;
+}
+
+.atf-hero {
+  order: 1;
+}
+
+.atf-workspace {
+  order: 2;
+}
+
+.atf-intro {
+  order: 3;
+}
+
+.atf-formulas {
+  order: 4;
+}
+
 .atf-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 30px 50px;
-  padding: 56px 0 34px;
+  gap: 22px 42px;
+  padding: 34px 0 22px;
 }
 
 .atf-hero-copy {
@@ -281,9 +307,9 @@
 
 .atf-hero h1 {
   max-width: 1120px;
-  margin: 19px 0 18px;
+  margin: 14px 0 13px;
   font-family: var(--atf-display);
-  font-size: clamp(2.55rem, 4.6vw, 5rem);
+  font-size: clamp(2.4rem, 4vw, 4.1rem);
   font-weight: 600;
   line-height: 1.07;
   letter-spacing: -0.045em;
@@ -353,7 +379,7 @@
 
 .atf-hero-metrics > div {
   display: grid;
-  min-height: 94px;
+  min-height: 78px;
   align-content: center;
   gap: 3px;
   padding: 16px 22px;
@@ -382,6 +408,11 @@
   color: var(--atf-muted);
   font-family: var(--atf-mono);
   font-size: 9px;
+}
+
+.atf-hero-status > span,
+.atf-hero-status > small {
+  color: var(--atf-primary);
 }
 
 .atf-hero-metrics .atf-hero-status {
@@ -414,6 +445,7 @@
   border: 1px solid var(--atf-border);
   border-radius: 20px;
   box-shadow: var(--atf-shadow);
+  margin-top: 20px;
 }
 
 .atf-intro-main {
@@ -593,7 +625,7 @@
 }
 
 .atf-formulas h2 {
-  margin-top: 10px;
+  margin-top: 0;
   font-family: var(--atf-display);
   font-size: clamp(1.4rem, 2vw, 1.95rem);
   font-weight: 600;
@@ -630,10 +662,11 @@
 
 .atf-formula-block {
   min-width: 0;
-  padding: 12px 12px 8px;
-  background: var(--atf-paper-soft);
-  border: 1px solid color-mix(in srgb, var(--atf-border) 82%, transparent);
-  border-radius: 10px;
+  padding: 10px 4px 8px;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--atf-border);
+  border-radius: 0;
 }
 
 .atf-formula-label {
@@ -722,7 +755,7 @@
 }
 
 .atf-card-header h2 {
-  margin-top: 9px;
+  margin-top: 0;
   font-family: var(--atf-display);
   font-size: clamp(1.45rem, 2.25vw, 2.1rem);
   font-weight: 600;
@@ -964,6 +997,13 @@
   touch-action: none;
 }
 
+.atf-radius-hit {
+  fill: transparent;
+  pointer-events: all;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
 .atf-force {
   cursor: help;
 }
@@ -986,6 +1026,7 @@
   stroke-width: 0.75;
   stroke-dasharray: 1.5 2.5;
   opacity: 0.42;
+  pointer-events: none;
   vector-effect: non-scaling-stroke;
 }
 
@@ -997,7 +1038,7 @@
 
 .atf-force-label {
   font-family: var(--atf-sans);
-  font-size: 11.5px;
+  font-size: 13px;
   font-weight: 650;
 }
 
@@ -1038,7 +1079,7 @@
 .atf-map-note text {
   fill: var(--atf-faint);
   font-family: var(--atf-mono);
-  font-size: 9px;
+  font-size: 12px;
 }
 
 .atf-force-tooltip {
@@ -1103,11 +1144,9 @@
 .atf-readout-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-top: 9px;
-  overflow: hidden;
-  background: var(--atf-paper-soft);
-  border: 1px solid var(--atf-border);
-  border-radius: 10px;
+  margin-top: 10px;
+  border-top: 1px solid var(--atf-border);
+  border-bottom: 1px solid var(--atf-border);
 }
 
 .atf-readout-grid > div {
@@ -1358,7 +1397,7 @@
 }
 
 .atf-concept-card h2 {
-  margin-top: 10px;
+  margin-top: 0;
   font-family: var(--atf-display);
   font-size: clamp(1.4rem, 2.1vw, 2rem);
   font-weight: 600;
@@ -1411,7 +1450,7 @@
 }
 
 .atf-control-panel h2 {
-  margin-top: 8px;
+  margin-top: 0;
   font-family: var(--atf-display);
   font-size: 22px;
   font-weight: 600;
@@ -1486,7 +1525,7 @@
 }
 
 .atf-preset-grid button > span {
-  color: var(--atf-faint);
+  color: var(--atf-muted);
   font-family: var(--atf-mono);
   font-size: 8px;
 }
@@ -1513,14 +1552,20 @@
   color: var(--atf-primary);
 }
 
+.atf-preset-grid button.is-active small {
+  color: var(--atf-primary);
+}
+
 .atf-segmented {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 3px;
-  padding: 3px;
-  background: var(--atf-paper-soft);
-  border: 1px solid var(--atf-border);
-  border-radius: 8px;
+  padding: 5px 0;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--atf-border);
+  border-bottom: 1px solid var(--atf-border);
+  border-radius: 0;
 }
 
 .atf-segmented + .atf-segmented,
@@ -1555,11 +1600,13 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  padding: 10px;
+  padding: 10px 0;
   margin-top: 8px;
-  background: var(--atf-paper-blue);
-  border: 1px solid color-mix(in srgb, var(--atf-primary) 16%, var(--atf-border));
-  border-radius: 8px;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--atf-border);
+  border-bottom: 1px solid var(--atf-border);
+  border-radius: 0;
 }
 
 .atf-computed-wind > div {
@@ -1581,7 +1628,7 @@
 .atf-computed-wind small {
   grid-column: 1 / -1;
   color: var(--atf-muted);
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -1620,7 +1667,7 @@
 .atf-range-symbol {
   color: var(--atf-primary) !important;
   font-family: var(--atf-mono);
-  font-size: 9px !important;
+  font-size: 11px !important;
 }
 
 .atf-range-heading strong {
@@ -1701,30 +1748,6 @@
   color: var(--atf-primary);
   background: var(--atf-primary-soft);
   border-color: color-mix(in srgb, var(--atf-primary) 20%, var(--atf-border));
-}
-
-.atf-controls-open {
-  position: absolute;
-  top: 12px;
-  right: 24px;
-  z-index: 8;
-  display: inline-flex;
-  min-height: 39px;
-  align-items: center;
-  gap: 8px;
-  padding: 0 13px;
-  color: var(--atf-primary);
-  font-size: 11px;
-  font-weight: 700;
-  background: var(--atf-paper);
-  border: 1px solid var(--atf-border);
-  border-radius: 999px;
-  box-shadow: 0 6px 18px rgba(36, 55, 67, 0.1);
-}
-
-.atf-controls-open span {
-  font-family: var(--atf-mono);
-  font-size: 14px;
 }
 
 .atf-workspace {
@@ -1920,6 +1943,126 @@
   padding-bottom: 4px !important;
 }
 
+/* Keep instructional labels and control metadata readable at every breakpoint. */
+.atf-brand small,
+.atf-hero-eyebrow,
+.atf-hero-metrics span,
+.atf-hero-metrics small,
+.atf-section-kicker,
+.atf-force-intro > div span,
+.atf-formula-live,
+.atf-variable-row > span,
+.atf-card-status > span,
+.atf-card-status button,
+.atf-canvas-caption,
+.atf-canvas-footer,
+.atf-readout-grid span,
+.atf-readout-grid small,
+.atf-eyebrow,
+.atf-mini-tag,
+.atf-mini-card > footer,
+.atf-gauge-readout small,
+.atf-control-section-title small,
+.atf-preset-grid button > span,
+.atf-preset-grid button small,
+.atf-segmented button,
+.atf-computed-wind span,
+.atf-computed-wind small,
+.atf-range-symbol,
+.atf-range-heading strong,
+.atf-range-control small,
+.atf-panel-actions button,
+.atf-footer > button {
+  font-size: 11px;
+}
+
+.atf-force-intro p,
+.atf-concept-columns p,
+.atf-balance-strip small,
+.atf-formula-label,
+.atf-gauge-readout span,
+.atf-control-section-title span,
+.atf-range-heading > span {
+  font-size: 12px;
+}
+
+.atf-dialog-body p,
+.atf-balance-explain span,
+.atf-operation-grid span {
+  font-size: 13px;
+}
+
+.atf-footer p {
+  font-size: 12px;
+}
+
+.atf-readout-grid small,
+.atf-computed-wind small {
+  font-size: 12px;
+}
+
+.atf-force-label {
+  font-size: 13px;
+}
+
+.atf-map-legend text,
+.atf-map-note text,
+.atf-chart-grid text,
+.atf-axis-title,
+.atf-gauge text {
+  font-size: 11px;
+}
+
+.atf-map-note text {
+  font-size: 12px;
+}
+
+.atf-button,
+.atf-card-status button,
+.atf-panel-actions button {
+  min-height: 44px;
+}
+
+.atf-icon-button {
+  width: 44px;
+  height: 44px;
+}
+
+.atf-home-button {
+  min-height: 44px;
+}
+
+.atf-panel-close,
+.atf-dialog-close {
+  width: 44px;
+  height: 44px;
+}
+
+.atf-segmented button {
+  min-height: 40px;
+}
+
+.atf-range-control input[type="range"] {
+  height: 32px;
+}
+
+.atf-range-control input[type="range"]::-webkit-slider-thumb {
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+}
+
+.atf-range-control input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+}
+
+.atf-footer > button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+}
+
 @media (max-width: 1260px) {
   .atf-app {
     padding-inline: 21px;
@@ -1984,7 +2127,7 @@
   .atf-hero {
     grid-template-columns: minmax(0, 1fr);
     gap: 22px;
-    padding-top: 40px;
+    padding-top: 30px;
   }
 
   .atf-hero-actions {
@@ -2000,7 +2143,27 @@
   }
 
   .atf-hero-metrics > div:nth-child(-n + 2) {
-    border-bottom: 1px solid var(--atf-border);
+    border-bottom: 0;
+  }
+
+  .atf-hero-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .atf-hero-metrics > div {
+    border-right: 1px solid var(--atf-border);
+  }
+
+  .atf-hero-metrics > div:nth-child(2) {
+    border-right: 1px solid var(--atf-border);
+  }
+
+  .atf-hero-metrics > div:nth-child(2) {
+    border-bottom: 0;
+  }
+
+  .atf-hero-metrics > div:nth-child(4) {
+    border-right: 0;
   }
 
   .atf-force-intro-grid {
@@ -2057,7 +2220,7 @@
 
 @media (max-width: 640px) {
   .atf-app {
-    padding: 12px 10px 24px;
+    padding: 12px 12px 24px;
   }
 
   .atf-topbar {
@@ -2074,11 +2237,11 @@
   }
 
   .atf-hero {
-    padding: 33px 2px 26px;
+    padding: 24px 2px 18px;
   }
 
   .atf-hero h1 {
-    font-size: clamp(2.15rem, 10vw, 3.1rem);
+    font-size: clamp(2rem, 9vw, 2.75rem);
     letter-spacing: -0.04em;
   }
 
@@ -2089,26 +2252,26 @@
   .atf-hero-actions {
     display: grid;
     width: 100%;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .atf-button {
     min-height: 44px;
     padding: 0 8px;
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .atf-button:last-child {
-    grid-column: 1 / -1;
+    grid-column: auto;
   }
 
   .atf-hero-metrics > div {
-    min-height: 82px;
-    padding: 13px 15px;
+    min-height: 72px;
+    padding: 11px 10px;
   }
 
   .atf-hero-metrics strong {
-    font-size: 1.25rem;
+    font-size: 1.18rem;
   }
 
   .atf-intro {
@@ -2183,12 +2346,12 @@
   }
 
   .atf-force-label {
-    font-size: 16px;
+    font-size: 20px;
   }
 
   .atf-wind-label,
   .atf-parcel text {
-    font-size: 13px;
+    font-size: 16px;
   }
 
   .atf-map-legend text,
@@ -2236,14 +2399,12 @@
     padding: 17px;
   }
 
-  .atf-controls-open {
-    position: fixed;
-    top: auto;
-    right: 14px;
-    bottom: 14px;
-    z-index: 30;
-    min-height: 45px;
-    box-shadow: 0 10px 28px rgba(25, 43, 56, 0.18);
+  .atf-segmented button {
+    min-height: 44px;
+  }
+
+  .atf-range-control input[type="range"] {
+    height: 44px;
   }
 
   .atf-control-panel {

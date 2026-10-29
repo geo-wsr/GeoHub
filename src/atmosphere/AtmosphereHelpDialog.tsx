@@ -11,19 +11,49 @@ export function AtmosphereHelpDialog({
   onClose,
 }: AtmosphereHelpDialogProps) {
   const closeButton = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
+    const previousFocus = document.activeElement;
     document.body.style.overflow = "hidden";
     closeButton.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const items = [
+        ...dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ].filter((element) => element.getClientRects().length > 0);
+      if (items.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (
+        items.length === 1 ||
+        (event.shiftKey && document.activeElement === first) ||
+        (!event.shiftKey && document.activeElement === last) ||
+        !dialogRef.current.contains(document.activeElement)
+      ) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", handleKeyDown);
+      if (previousFocus instanceof HTMLElement) {
+        previousFocus.focus();
+      }
     };
   }, [onClose, open]);
 
@@ -37,6 +67,7 @@ export function AtmosphereHelpDialog({
       }}
     >
       <section
+        ref={dialogRef}
         className="atf-dialog"
         role="dialog"
         aria-modal="true"

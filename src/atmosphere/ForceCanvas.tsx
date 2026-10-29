@@ -201,7 +201,7 @@ export function ForceCanvas({
     const labelX = end.x + unit.x * 10 + (anchor === "middle" ? 0 : 0);
     const labelY = end.y + unit.y * 10 + 4;
     const value = toDisplayForce(force.magnitude);
-    const labelWidth = Math.max(45, 28 + value.length * 7);
+    const labelWidth = Math.max(120, 84 + value.length * 9);
     const isHovered = hoveredForce === meta.key;
     const dash =
       meta.key === "friction"
@@ -214,7 +214,7 @@ export function ForceCanvas({
       <g
         className={`atf-force atf-force--${meta.key} ${isHovered ? "is-hovered" : ""}`}
         key={meta.key}
-        role="button"
+        role="group"
         tabIndex={0}
         aria-label={`${meta.label}，${value}×10⁻³ m/s²，${meta.directionDescription}`}
         onFocus={() => setHoveredForce(meta.key)}
@@ -531,6 +531,22 @@ export function ForceCanvas({
               markerEnd="url(#atf-arrow-net)"
             />
           </g>
+        )}
+        {config.geometry === "circular" && (
+          <circle
+            className="atf-radius-hit"
+            cx={parcel.x}
+            cy={parcel.y}
+            r="24"
+            aria-label="拖动空气质点调整曲率半径"
+            onPointerDown={(event) => {
+              event.stopPropagation();
+              dragMode.current = "radius";
+              event.currentTarget.setPointerCapture(event.pointerId);
+            }}
+          >
+            <title>拖动空气质点调整曲率半径</title>
+          </circle>
         )}
 
         <g className="atf-map-legend">

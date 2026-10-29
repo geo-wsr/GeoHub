@@ -84,9 +84,9 @@ for (const [index, expected] of [
   );
 }
 assert(
-  (await page.locator(".qh-browser-live").innerText()).includes("PAUSED") &&
-    (await page.locator(".qh-slide-paused").innerText()).includes("暂未开放"),
-  "大气受力主视觉没有显示暂停开放状态",
+  (await page.locator(".qh-browser-live").innerText()).includes("LIVE") &&
+    (await page.locator(".qh-slide-paused").count()) === 0,
+  "大气受力主视觉没有显示正常开放状态",
 );
 
 const scrollBefore = await page.evaluate(() => window.scrollY);
@@ -125,13 +125,13 @@ await page
 await waitForHome();
 
 await page.locator('a[href="#atmosphere"]').click();
-await page.locator(".atfu-page").waitFor();
+await page.locator(".atf-app").waitFor();
 assert(
-  (await page.locator(".atf-app").count()) === 0 &&
-    (await page.locator(".atfu-copy").innerText()).includes("暂未开放"),
-  "大气受力路由没有由前端阻拦页截获",
+  (await page.locator(".atf-canvas").count()) === 1 &&
+    (await page.locator("h1").innerText()).includes("大气水平运动受力实验室"),
+  "大气受力路由没有进入实际实验工作台",
 );
-await page.locator(".atfu-home-button").click();
+await page.locator(".atf-home-button").click();
 await waitForHome();
 
 const homePrimary = await page

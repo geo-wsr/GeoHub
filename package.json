@@ -10,10 +10,11 @@
     "build:release": "tsc -b && vite build --outDir release --emptyOutDir",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:ui": "node scripts/smoke-home.mjs && node scripts/smoke.mjs && node scripts/smoke-dijkstra.mjs && node scripts/smoke-atmosphere-gate.mjs",
+    "test:ui": "node scripts/smoke-home.mjs && node scripts/smoke.mjs && node scripts/smoke-dijkstra.mjs && node scripts/smoke-atmosphere.mjs",
     "test:ui:home": "node scripts/smoke-home.mjs",
     "test:ui:dijkstra": "node scripts/smoke-dijkstra.mjs",
-    "test:ui:atmosphere": "node scripts/smoke-atmosphere-gate.mjs",
+    "test:ui:atmosphere": "node scripts/smoke-atmosphere.mjs",
+    "test:ui:atmosphere-gate": "node scripts/smoke-atmosphere-gate.mjs",
     "test:ui:atmosphere-lab": "node scripts/smoke-atmosphere.mjs"
   },
   "dependencies": {

@@ -43,7 +43,6 @@ export function ForceLatitudeChart({ state }: AuxiliaryChartsProps) {
     <article className="atf-mini-card">
       <header>
         <div>
-          <span className="atf-eyebrow">F–φ CURVE</span>
           <h3>地转偏向力随纬度增加</h3>
         </div>
         <span className="atf-mini-tag">固定 V</span>
@@ -173,7 +172,6 @@ export function WindDeflectionGauge({ state }: AuxiliaryChartsProps) {
     <article className="atf-mini-card atf-gauge-card">
       <header>
         <div>
-          <span className="atf-eyebrow">WIND ANGLE</span>
           <h3>风与等压线的夹角</h3>
         </div>
         <span className="atf-mini-tag">偏差 {Math.abs(deflection).toFixed(1)}°</span>

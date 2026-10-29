@@ -1,5 +1,5 @@
 /**
- * Product rollout switches. The atmospheric laboratory source is kept intact so
- * it can be re-enabled without changing its route or homepage card.
+ * Product rollout switches. Set false to route the atmospheric laboratory to
+ * its maintenance screen without changing the public URL.
  */
-export const ATMOSPHERE_ENABLED = false;
+export const ATMOSPHERE_ENABLED = true;

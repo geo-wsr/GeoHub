@@ -35,6 +35,10 @@ function assert(condition, message) {
 
 await page.goto(baseUrl, { waitUntil: "networkidle" });
 await page.locator(".atf-canvas").waitFor();
+await page.screenshot({
+  path: `${artifacts}/atmosphere-first-viewport-desktop.png`,
+  fullPage: false,
+});
 
 assert(
   (await page.locator("h1").innerText()).includes(
@@ -54,6 +58,21 @@ assert(
 assert(
   (await page.locator(".atf-card-status").innerText()).includes("梯度风平衡"),
   "默认梯度风低压预设未进入平衡状态",
+);
+const desktopCanvasTop = await page
+  .locator(".atf-canvas-shell")
+  .evaluate((element) => element.getBoundingClientRect().top + scrollY);
+assert(
+  desktopCanvasTop < 900,
+  `桌面首屏未露出主实验图，画布顶部位于 ${desktopCanvasTop}px`,
+);
+assert(
+  await page
+    .locator(".atf-segmented button, .atf-preset-grid button")
+    .evaluateAll((elements) =>
+      elements.every((element) => element.hasAttribute("aria-pressed")),
+    ),
+  "分段或预设按钮缺少当前选中状态",
 );
 
 const presetGrid = page.locator(".atf-preset-grid");
@@ -111,6 +130,32 @@ const boundaryAngle = Number(
 );
 assert(boundaryAngle > 3, "摩擦作用没有形成可读的入流角");
 
+const radiusControl = page
+  .locator(".atf-range-control")
+  .filter({ hasText: "曲率半径" })
+  .locator("strong");
+const radiusBeforeDrag = await radiusControl.innerText();
+const radiusHit = page.locator(".atf-radius-hit");
+await radiusHit.scrollIntoViewIfNeeded();
+const radiusHitBox = await radiusHit.boundingBox();
+if (radiusHitBox) {
+  await page.mouse.move(
+    radiusHitBox.x + radiusHitBox.width / 2,
+    radiusHitBox.y + radiusHitBox.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    radiusHitBox.x + radiusHitBox.width / 2 + 32,
+    radiusHitBox.y + radiusHitBox.height / 2 + 20,
+    { steps: 6 },
+  );
+  await page.mouse.up();
+}
+assert(
+  (await radiusControl.innerText()) !== radiusBeforeDrag,
+  "拖动圆形等压线质点没有更新曲率半径",
+);
+
 const frictionRange = page.getByLabel(/摩擦系数/);
 await frictionRange.evaluate((element) => {
   const input = element;
@@ -138,6 +183,13 @@ await page.getByRole("button", { name: "显示公式", exact: true }).click();
 
 await page.getByRole("button", { name: "帮助 / 原理说明", exact: true }).click();
 await page.locator(".atf-dialog").waitFor();
+await page.keyboard.press("Tab");
+assert(
+  await page.evaluate(() =>
+    Boolean(document.activeElement?.closest(".atf-dialog")),
+  ),
+  "帮助弹窗的键盘焦点逃逸到了背景页面",
+);
 assert(
   (await page.locator(".atf-dialog p").count()) >= 6 &&
     (await page.locator(".atf-dialog .atf-formula-block").count()) >= 4,
@@ -194,6 +246,17 @@ assert(
 await page.setViewportSize({ width: 390, height: 844 });
 await page.reload({ waitUntil: "networkidle" });
 await page.locator(".atf-canvas").waitFor();
+await page.screenshot({
+  path: `${artifacts}/atmosphere-first-viewport-mobile.png`,
+  fullPage: false,
+});
+const mobileCanvasTop = await page
+  .locator(".atf-canvas-shell")
+  .evaluate((element) => element.getBoundingClientRect().top + scrollY);
+assert(
+  mobileCanvasTop < 900,
+  `移动端首屏离主实验图过远，画布顶部位于 ${mobileCanvasTop}px`,
+);
 const mobileOverflow = await page.evaluate(() => ({
   scrollWidth: document.documentElement.scrollWidth,
   clientWidth: document.documentElement.clientWidth,
@@ -206,11 +269,55 @@ assert(
   (await page.locator(".atf-control-panel").count()) === 0,
   "移动端参数面板没有默认收起",
 );
-await page.getByRole("button", { name: /展开参数与控制/ }).click();
+await page.getByRole("button", { name: "展开参数", exact: true }).click();
 await page.locator(".atf-control-panel").waitFor();
 assert(
   await page.locator(".atf-control-panel").isVisible(),
   "移动端参数面板无法展开",
+);
+assert(
+  (await page.locator(".atf-control-panel").getAttribute("role")) === "dialog" &&
+    (await page.locator(".atf-control-panel").getAttribute("aria-modal")) ===
+      "true",
+  "移动端参数抽屉缺少对话框语义",
+);
+await page.keyboard.press("Escape");
+assert(
+  (await page.locator(".atf-control-panel").count()) === 0,
+  "移动端参数抽屉无法用 Escape 关闭",
+);
+await page.getByRole("button", { name: "展开参数", exact: true }).click();
+await page.locator(".atf-control-panel").waitFor();
+const undersizedMobileTargets = await page.evaluate(() => {
+  const visible = (element) => {
+    const style = window.getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return (
+      style.display !== "none" &&
+      style.visibility !== "hidden" &&
+      Number(style.opacity) > 0 &&
+      rect.width > 0 &&
+      rect.height > 0
+    );
+  };
+  return [...document.querySelectorAll("button, input")]
+    .filter(visible)
+    .map((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        label:
+          element.getAttribute("aria-label") ||
+          element.textContent?.trim().replace(/\s+/g, " ").slice(0, 40) ||
+          element.tagName,
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+      };
+    })
+    .filter((target) => target.width < 44 || target.height < 44);
+});
+assert(
+  undersizedMobileTargets.length === 0,
+  `移动端仍有过小触控目标：${JSON.stringify(undersizedMobileTargets)}`,
 );
 await page.screenshot({
   path: `${artifacts}/atmosphere-mobile-controls.png`,
