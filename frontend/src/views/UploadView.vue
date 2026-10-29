@@ -199,7 +199,7 @@ onMounted(async () => {
   <div class="container upload">
     <RouterLink class="back" :to="{ name: 'materials' }">
       <AppIcon name="chevronLeft" :size="14" />
-      返回资料库
+      返回资料分享
     </RouterLink>
 
     <header class="upload__head">
@@ -209,9 +209,9 @@ onMounted(async () => {
       </p>
       <p class="upload__notice">
         <AppIcon :name="isAdmin ? 'check' : 'info'" :size="14" />
-        <span v-if="isEditing">保存后重新进入审核队列，管理员通过后会再次出现在资料库。</span>
-        <span v-else-if="isAdmin">管理员上传后即时发布到公开资料库。</span>
-        <span v-else>提交后进入审核队列，管理员通过后才会出现在公开资料库。</span>
+        <span v-if="isEditing">保存后重新进入审核队列，管理员通过后会再次出现在资料分享区。</span>
+        <span v-else-if="isAdmin">管理员上传后即时发布到公开资料分享区。</span>
+        <span v-else>提交后进入审核队列，管理员通过后才会出现在公开资料分享区。</span>
       </p>
     </header>
 

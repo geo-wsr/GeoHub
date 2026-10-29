@@ -1,9 +1,9 @@
 <template>
   <footer class="site-footer">
     <div class="container site-footer__inner">
-      <p class="site-footer__line">mywebsite · 地理学学习资料共享平台</p>
+      <p class="site-footer__line">泉盒子的GeoHub · 地理学习资料与可视化平台</p>
       <p class="site-footer__meta">
-        Vue 3 + Vite 前台 · Django REST Framework 后端 ·
+        资料分享 · 论坛 · 可视化实验室 ·
         <a :href="ADMIN_URL">管理后台</a>
       </p>
     </div>

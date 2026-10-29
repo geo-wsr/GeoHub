@@ -1,6 +1,6 @@
 <script setup>
-import { onMounted } from 'vue'
-import { RouterView } from 'vue-router'
+import { computed, onMounted } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
 
 import { api } from '@/api'
 import AppFooter from '@/components/AppFooter.vue'
@@ -9,6 +9,9 @@ import ConnectionBanner from '@/components/ConnectionBanner.vue'
 import LoginPrompt from '@/components/LoginPrompt.vue'
 import ToastHost from '@/components/ToastHost.vue'
 import { loadCurrentUser } from '@/stores/auth'
+
+const route = useRoute()
+const immersive = computed(() => Boolean(route.meta.immersive))
 
 // 等高线横线位置（配合曲线路径，营造低干扰的地理质感）
 const contourRows = Array.from({ length: 14 }, (_, index) => 24 + index * 30)
@@ -25,9 +28,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="app-shell">
+  <div class="app-shell" :class="{ 'app-shell--immersive': immersive }">
     <!-- 极低透明度等高线纹理：浅色 2% 黑、深色 2% 白，不干扰内容阅读 -->
-    <div class="contour" aria-hidden="true">
+    <div v-if="!immersive" class="contour" aria-hidden="true">
       <svg viewBox="0 0 420 460" preserveAspectRatio="none">
         <g fill="none" stroke="currentColor" stroke-width="1">
           <path
@@ -41,11 +44,11 @@ onMounted(async () => {
       </svg>
     </div>
 
-    <AppHeader />
+    <AppHeader v-if="!immersive" />
 
-    <main class="app-main">
+    <main class="app-main" :class="{ 'app-main--immersive': immersive }">
       <!-- 后端连不上时的全局提示（任一请求成功会自动消失） -->
-      <ConnectionBanner />
+      <ConnectionBanner v-if="!immersive" />
       <RouterView v-slot="{ Component }">
         <Transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -53,10 +56,10 @@ onMounted(async () => {
       </RouterView>
     </main>
 
-    <AppFooter />
-    <ToastHost />
+    <AppFooter v-if="!immersive" />
+    <ToastHost v-if="!immersive" />
     <!-- 进站登录引导：游客首次访问时弹出，可关闭，不影响浏览 -->
-    <LoginPrompt />
+    <LoginPrompt v-if="!immersive" />
   </div>
 </template>
 
@@ -88,5 +91,13 @@ onMounted(async () => {
   z-index: 1;
   flex: 1;
   padding-top: var(--nav-height);
+}
+
+.app-main--immersive {
+  padding-top: 0;
+}
+
+.app-shell--immersive {
+  min-height: 100vh;
 }
 </style>

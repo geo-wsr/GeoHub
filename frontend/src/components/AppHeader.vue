@@ -16,22 +16,23 @@ const router = useRouter()
 const keyword = ref('')
 const scrolled = ref(false)
 const menuOpen = ref(false)
+const mobileNavOpen = ref(false)
 
 const isLoggedIn = computed(() => Boolean(authState.user))
 const isAdmin = computed(() => Boolean(authState.user?.is_staff))
 
-// 主导航三大入口：首页 / 资料库 / 论坛（细分分类与板块在页面侧边栏切换）
+// 主站三大板块；首页由左侧站点标志进入。
 const NAV = [
-  { key: 'home', label: '首页', to: { name: 'home' } },
-  { key: 'materials', label: '资料库', to: { name: 'materials' } },
+  { key: 'materials', label: '资料分享', to: { name: 'materials' } },
   { key: 'forum', label: '论坛', to: { name: 'forum' } },
+  { key: 'visualization', label: '可视化实验室', to: { name: 'visualization' } },
 ]
 
 const activeNav = computed(() => {
   const name = route.name
-  if (name === 'home') return 'home'
   if (['materials', 'material-detail', 'upload'].includes(name)) return 'materials'
   if (['forum', 'topic-detail', 'topic-new'].includes(name)) return 'forum'
+  if (['visualization', 'visualization-lab'].includes(name)) return 'visualization'
   return ''
 })
 
@@ -42,6 +43,9 @@ function handleScroll() {
 /** 点击空白处收起用户菜单 */
 function handleDocumentClick(event) {
   if (!event.target.closest?.('.user-entry')) menuOpen.value = false
+  if (!event.target.closest?.('.mobile-nav-panel, .mobile-nav-toggle')) {
+    mobileNavOpen.value = false
+  }
 }
 
 onMounted(() => {
@@ -52,6 +56,10 @@ onMounted(() => {
 })
 
 watch(() => authState.user?.id, refreshUnread)
+watch(() => route.fullPath, () => {
+  mobileNavOpen.value = false
+  menuOpen.value = false
+})
 
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', handleScroll)
@@ -60,6 +68,7 @@ onBeforeUnmount(() => {
 
 function submitSearch() {
   const value = keyword.value.trim()
+  mobileNavOpen.value = false
   router.push({ name: 'search', query: value ? { q: value } : {} })
 }
 
@@ -80,7 +89,7 @@ async function handleLogout() {
     <div class="container site-header__inner">
       <RouterLink to="/" class="brand">
         <span class="brand__logo"><AppIcon name="contour" :size="20" /></span>
-        <span class="brand__text">地理资料库</span>
+        <span class="brand__text">泉盒子的GeoHub</span>
       </RouterLink>
 
       <nav class="main-nav" aria-label="主导航">
@@ -108,6 +117,17 @@ async function handleLogout() {
         </form>
 
         <ThemeToggle />
+
+        <button
+          class="mobile-nav-toggle"
+          type="button"
+          :aria-expanded="mobileNavOpen"
+          aria-controls="mobile-site-nav"
+          :aria-label="mobileNavOpen ? '关闭主导航' : '打开主导航'"
+          @click.stop="mobileNavOpen = !mobileNavOpen"
+        >
+          <AppIcon :name="mobileNavOpen ? 'close' : 'menu'" :size="18" />
+        </button>
 
         <RouterLink
           v-if="isLoggedIn"
@@ -184,6 +204,36 @@ async function handleLogout() {
         </div>
       </div>
     </div>
+
+    <Transition name="mobile-nav">
+      <div v-if="mobileNavOpen" id="mobile-site-nav" class="mobile-nav-panel">
+        <nav class="mobile-nav-links" aria-label="移动端主导航">
+          <RouterLink
+            v-for="item in NAV"
+            :key="item.key"
+            :to="item.to"
+            :class="{ 'is-active': activeNav === item.key }"
+          >
+            {{ item.label }}
+            <AppIcon name="chevronRight" :size="15" />
+          </RouterLink>
+          <RouterLink to="/" :class="{ 'is-active': route.name === 'home' }">
+            首页
+            <AppIcon name="chevronRight" :size="15" />
+          </RouterLink>
+        </nav>
+        <form class="mobile-search" role="search" @submit.prevent="submitSearch">
+          <AppIcon name="search" :size="17" />
+          <input
+            v-model="keyword"
+            type="search"
+            placeholder="搜索资料或帖子"
+            aria-label="全局搜索"
+          />
+          <button type="submit">搜索</button>
+        </form>
+      </div>
+    </Transition>
   </header>
 </template>
 
@@ -284,6 +334,103 @@ async function handleLogout() {
   align-items: center;
   gap: 12px;
   flex: none;
+}
+
+.mobile-nav-toggle {
+  display: none;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-card);
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.mobile-nav-toggle:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.mobile-nav-panel {
+  position: fixed;
+  top: var(--nav-height);
+  left: 0;
+  right: 0;
+  z-index: 49;
+  padding: 12px var(--gutter) 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-nav-solid);
+  box-shadow: var(--shadow-nav);
+}
+
+.mobile-nav-links {
+  display: grid;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.mobile-nav-links a {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: var(--fs-h3);
+}
+
+.mobile-nav-links a.is-active {
+  color: var(--color-primary);
+  font-weight: var(--fw-semibold);
+}
+
+.mobile-search {
+  display: flex;
+  max-width: var(--max-width);
+  height: 44px;
+  align-items: center;
+  gap: 8px;
+  margin: 14px auto 0;
+  padding-left: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-3);
+}
+
+.mobile-search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-1);
+  font: inherit;
+}
+
+.mobile-search button {
+  align-self: stretch;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: var(--color-primary);
+  color: #fff;
+  cursor: pointer;
+}
+
+.mobile-nav-enter-active,
+.mobile-nav-leave-active {
+  transition: opacity var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+
+.mobile-nav-enter-from,
+.mobile-nav-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
 .search {
@@ -432,6 +579,49 @@ async function handleLogout() {
 
   .search__input {
     width: 130px;
+  }
+}
+
+@media (max-width: 840px) {
+  .site-header__inner {
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .main-nav,
+  .search {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  .mobile-nav-toggle {
+    display: grid;
+  }
+}
+
+@media (max-width: 520px) {
+  .brand {
+    gap: 7px;
+    font-size: 15px;
+  }
+
+  .brand__logo {
+    width: 28px;
+    height: 28px;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .theme-toggle,
+  .bell,
+  .mobile-nav-toggle {
+    width: 34px;
+    height: 34px;
   }
 }
 </style>

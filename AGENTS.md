@@ -11,7 +11,7 @@
 
 | 层 | 技术 | 版本 |
 | --- | --- | --- |
-| 前台 | Vue · Vue Router · Vite · axios | 3.5.43 · 5.3.1 · 8.3.1 · 1.20.0 |
+| 前台 | Vue · Vue Router · React · Vite · axios | 3.5 · 5.3 · 19.3 · 8.3 · 1.21 |
 | 后端 | Django（LTS） | 5.2.17 |
 | 接口 | Django REST Framework | 3.18.1 |
 | 后台 | Django Admin + SimpleUI | 2026.1.13 |
@@ -21,7 +21,8 @@
 
 - 语言与时区：`LANGUAGE_CODE = 'zh-hans'`、`TIME_ZONE = 'Asia/Shanghai'`
 - 三级角色：游客（只读）/ 注册用户（下载、评论、发帖、提交上传）/ 管理员（审核、管理全站内容）
-- 前台三大入口：首页 / 资料库 / 论坛；细分分类与板块在页面侧边栏切换
+- 前台三大板块：资料分享 / 论坛 / 可视化实验室；首页由站点标志进入
+- 可视化实验室按自然地理 / 人文地理 / 地信分类，现含杜能环、Dijkstra、大气受力三套实验
 - 已是 git 仓库：分支 `main`，首个提交 `761034d`，远端 `https://github.com/geo-wsr/GeoHub.git`
 - 生产环境是「境外 Serverless」，**不需要 ICP 备案**；只要换成境内服务器/境内 CDN 就必须备案
 - 所有源码使用 UTF-8，注释与界面文案为中文
@@ -63,13 +64,15 @@ mywebsite/                        # 单仓库：frontend/ + backend/ 前后端�
 │       ├── views.py              # spa_index：返回构建产物或跳转 Vite
 │       ├── management/commands/seed_data.py
 │       └── migrations/
-└── frontend/                     # Vue 前端工程（构建产物发布到 GitHub Pages）
+└── frontend/                     # Vue 主站 + React 可视化实验室
+    ├── lab/index.html            # 独立实验室页面入口
     ├── package.json / package-lock.json
     ├── vite.config.js        # 代理、别名、base(VITE_BASE_PATH) + 404 回退插件
     ├── .env.example          # VITE_API_BASE_URL / VITE_BASE_PATH 模板
     ├── index.html / public/favicon.svg
     ├── dist/                 # 构建产物（已 gitignore，由 npm run build 生成）
     └── src/
+        ├── visualization/         # React 实验室源码、截图与分类目录
         ├── main.js / App.vue       # 应用外壳：等高线纹理 + 路由淡入淡出
         ├── router/index.js         # 路由表 + 登录守卫 + 标题
         ├── api/index.js            # axios 实例、CSRF 拦截器、接口封装
@@ -79,9 +82,8 @@ mywebsite/                        # 单仓库：frontend/ + backend/ 前后端�
         ├── assets/base.css         # 重置、排版、按钮、表单、卡片、骨架屏
         ├── components/             # AppHeader / MaterialCard / TopicCard / FloorItem /
         │                           # CommentSection / StatusPill / PaginationBar / …
-        └── views/                  # Home / MaterialList / MaterialDetail / Upload / Profile / Login
-                                    # ForumList / TopicDetail / NewTopic / Search / Review
-                                    # OAuthCallback / NotFound
+        └── views/                  # Home / MaterialList / VisualizationPortal / VisualizationLab /
+                                    # ForumList / TopicDetail / Upload / Profile / Search / Review
 ```
 
 ## 3. 环境约束（重要）
@@ -133,6 +135,8 @@ cd D:\mywebsite\frontend
 npm run dev        # http://127.0.0.1:5173，热更新
 npm run build      # 产出 dist/，Django 随后托管新版本
 npm run preview
+npm run test:unit        # 实验室模型与算法测试
+npm run test:acceptance  # 需先启动 5173 与 8000，使用本机 Edge 验收四个视口
 ```
 
 停止后台的 Django 开发服务器：
@@ -158,6 +162,8 @@ Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
 要点：
 
 - 前台**不再使用 Django 模板**。给 Vue 的页面数据一律新增 DRF 接口，不要往 `views.py` 里加渲染逻辑。
+- 可视化实验室位于 `frontend/lab/index.html`，由主站的 `/visualization/:lab` 路由嵌入；
+  实验室内部继续使用 hash 路由。新增实验时同步更新 `src/visualization/catalog.js` 和路由白名单。
 
 ### 接口一览（前缀 `/api/`）
 

@@ -92,7 +92,7 @@ onBeforeUnmount(() => {
           <span class="prompt__logo">
             <AppIcon name="contour" :size="22" />
           </span>
-          <h2 id="login-prompt-title" class="prompt__title">欢迎来到地理资料库</h2>
+          <h2 id="login-prompt-title" class="prompt__title">欢迎来到泉盒子的GeoHub</h2>
           <p class="prompt__desc">
             登录后即可下载资料、收藏课件、在论坛发帖讨论，也可以上传自己的笔记与真题。
           </p>

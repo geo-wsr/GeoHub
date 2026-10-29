@@ -72,7 +72,7 @@ onMounted(load)
       <div>
         <h1>资料审核</h1>
         <p class="text-small text-muted">
-          待审核 <span class="num">{{ pendingCount }}</span> 份。通过后资料才会出现在公开资料库。
+          待审核 <span class="num">{{ pendingCount }}</span> 份。通过后资料才会出现在公开资料分享区。
         </p>
       </div>
       <button class="btn btn--secondary btn--sm" type="button" @click="load">
@@ -89,7 +89,7 @@ onMounted(load)
       description="用户提交的新资料会出现在这里。"
     >
       <template #action>
-        <RouterLink class="btn btn--secondary" :to="{ name: 'materials' }">回到资料库</RouterLink>
+        <RouterLink class="btn btn--secondary" :to="{ name: 'materials' }">回到资料分享</RouterLink>
       </template>
     </EmptyState>
 

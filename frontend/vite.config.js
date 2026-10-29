@@ -1,6 +1,7 @@
 import { copyFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 
+import react from '@vitejs/plugin-react'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
@@ -26,8 +27,11 @@ function spaFallback() {
 //   3. GitHub Pages 自定义域名：CI 注入 VITE_BASE_PATH=/
 // 它会同时决定 index.html 里的资源前缀与 Vue Router 的 history base。
 export default defineConfig(({ command }) => ({
-  base: command === 'build' ? process.env.VITE_BASE_PATH || '/static/' : '/',
-  plugins: [vue(), spaFallback()],
+  base:
+    command === 'build'
+      ? process.env.VITE_BASE_PATH || '/static/'
+      : process.env.VITE_BASE_PATH || '/',
+  plugins: [vue(), react(), spaFallback()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -49,5 +53,13 @@ export default defineConfig(({ command }) => ({
     outDir: 'dist',
     emptyOutDir: true,
     assetsDir: 'assets',
+    // 主站与可视化实验室共用一次构建，但各自是独立页面，
+    // 实验室的 React 样式和运行时不会进入 Vue 主站首屏。
+    rollupOptions: {
+      input: {
+        site: fileURLToPath(new URL('./index.html', import.meta.url)),
+        visualization: fileURLToPath(new URL('./lab/index.html', import.meta.url)),
+      },
+    },
   },
 }))

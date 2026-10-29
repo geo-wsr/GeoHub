@@ -38,6 +38,7 @@ const icons = {
   chevronLeft: '<path d="M14.4 6 8.4 12l6 6"/>',
   chevronRight: '<path d="M9.6 6l6 6-6 6"/>',
   close: '<path d="M6 6l12 12M18 6 6 18"/>',
+  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   check: '<path d="M5 12.8 9.4 17.2 19 7.6"/>',
   alert:

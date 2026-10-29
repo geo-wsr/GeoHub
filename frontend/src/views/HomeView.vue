@@ -20,27 +20,31 @@ const latestMaterials = ref([])
 const hotTopics = ref([])
 const loading = ref(true)
 
-// 网站介绍里的功能点：都是已经实现的能力，不写没做的
-const FEATURES = [
+// 主站三块内容共用同一套入口；首页数据区继续保留原有资料与讨论功能。
+const MAIN_SECTIONS = [
   {
-    icon: 'upload',
-    title: '资料共享与审核',
-    desc: 'PDF / Word / PPT 一键上传，管理员审核通过后公开，支持分类、标签与全文检索。',
+    icon: 'folder',
+    title: '资料分享',
+    eyebrow: 'MATERIALS',
+    desc: '课件、笔记、真题与地理数据集中归档，支持分类、标签、搜索、收藏和下载记录。',
+    to: { name: 'materials' },
+    action: '浏览全部资料',
   },
   {
     icon: 'comment',
-    title: '论坛与楼层回复',
-    desc: '按六个地学板块发帖讨论，支持 Markdown、二级回复、置顶加精与站内通知。',
+    title: '论坛',
+    eyebrow: 'FORUM',
+    desc: '按地学方向进入讨论，支持 Markdown、图片附件、楼层回复、置顶加精与站内通知。',
+    to: { name: 'forum' },
+    action: '进入论坛',
   },
   {
-    icon: 'heart',
-    title: '收藏与个人中心',
-    desc: '收藏资料、管理自己的上传与评论、查看下载记录，进度一目了然。',
-  },
-  {
-    icon: 'globe',
-    title: '深浅双主题',
-    desc: '白天黑夜自动适配的简约学术排版，专注阅读，手机上也能顺畅浏览。',
+    icon: 'layers',
+    title: '可视化实验室',
+    eyebrow: 'VISUAL LAB',
+    desc: '按自然地理、人文地理与地信三个方向，用可编辑模型和实时图表解释空间关系。',
+    to: { name: 'visualization' },
+    action: '进入实验室',
   },
 ]
 
@@ -83,7 +87,33 @@ onMounted(async () => {
     <!-- 主题大图轮播：等高线山体 / 遥感网格 / 城市与人口 / 岩层剖面 -->
     <HeroCarousel class="rise-in" />
 
-    <!-- 网站介绍 + 功能介绍 -->
+    <section class="section main-sections" aria-labelledby="main-sections-title">
+      <div class="section-head main-sections__head">
+        <h2 id="main-sections-title">本站三大板块</h2>
+        <p>分享资料、交流问题，再用交互实验理解地理过程。</p>
+      </div>
+      <div class="main-section-grid">
+        <RouterLink
+          v-for="item in MAIN_SECTIONS"
+          :key="item.title"
+          class="main-section-card"
+          :to="item.to"
+        >
+          <span class="main-section-card__icon">
+            <AppIcon :name="item.icon" :size="22" />
+          </span>
+          <span class="main-section-card__eyebrow">{{ item.eyebrow }}</span>
+          <strong class="main-section-card__title">{{ item.title }}</strong>
+          <span class="main-section-card__desc">{{ item.desc }}</span>
+          <span class="main-section-card__action">
+            {{ item.action }}
+            <AppIcon name="arrowRight" :size="15" />
+          </span>
+        </RouterLink>
+      </div>
+    </section>
+
+    <!-- 网站介绍 -->
     <section class="section intro rise-in">
       <div class="intro__head">
         <h2 class="section__title">关于本站</h2>
@@ -92,19 +122,12 @@ onMounted(async () => {
         </p>
       </div>
       <p class="intro__text">
-        这是一个面向地理学专业的学习资料共享平台：把散落在网盘、聊天记录里的课件、笔记、真题
-        集中起来，按自然地理、人文地理、GIS 遥感、数理基础与其他归类，
-        配上讨论区，让找资料和问问题都只用几分钟。
+        泉盒子的GeoHub 面向地理学专业的学习与教学：把散落在网盘、聊天记录里的课件、笔记和真题
+        集中起来，在论坛里继续讨论，再用交互实验室观察参数改变如何影响空间结果。
       </p>
-      <div class="features">
-        <article v-for="item in FEATURES" :key="item.title" class="card feature">
-          <span class="feature__icon">
-            <AppIcon :name="item.icon" :size="18" />
-          </span>
-          <h3 class="feature__title">{{ item.title }}</h3>
-          <p class="feature__desc">{{ item.desc }}</p>
-        </article>
-      </div>
+      <p class="intro__note">
+        资料与讨论继续使用原有账户、审核和通知体系；可视化实验室无需登录，可直接进入。
+      </p>
     </section>
 
     <!-- 热门下载：横向滚动卡片组 -->
@@ -190,7 +213,7 @@ onMounted(async () => {
         </div>
         <EmptyState
           v-else
-          title="资料库还是空的"
+          title="资料分享区还是空的"
           description="成为第一个分享资料的人，把课件或笔记传上来。"
         >
           <template #action>
@@ -260,6 +283,105 @@ onMounted(async () => {
   background: var(--bg-card);
 }
 
+.main-sections {
+  margin-top: 34px;
+}
+
+.main-sections__head {
+  align-items: end;
+  margin-bottom: 18px;
+}
+
+.main-sections__head h2 {
+  font-size: 30px;
+  letter-spacing: -0.025em;
+}
+
+.main-sections__head p {
+  max-width: 500px;
+  color: var(--text-2);
+  text-align: right;
+}
+
+.main-section-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.main-section-card {
+  display: flex;
+  min-height: 270px;
+  flex-direction: column;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
+  color: var(--text-1);
+  transition:
+    transform var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
+}
+
+.main-section-card:nth-child(3) {
+  background:
+    radial-gradient(circle at 84% 18%, var(--color-primary-soft), transparent 38%),
+    var(--bg-card);
+}
+
+.main-section-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-card-hover);
+  color: var(--text-1);
+  text-decoration: none;
+}
+
+.main-section-card__icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--color-primary);
+}
+
+.main-section-card__eyebrow {
+  margin-top: 22px;
+  color: var(--text-3);
+  font-family: var(--font-latin);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.main-section-card__title {
+  margin-top: 5px;
+  font-size: 23px;
+  line-height: 1.25;
+}
+
+.main-section-card__desc {
+  margin-top: 10px;
+  color: var(--text-2);
+  font-size: var(--fs-h4);
+  line-height: 1.75;
+  text-wrap: pretty;
+}
+
+.main-section-card__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 22px;
+  color: var(--color-primary);
+  font-size: var(--fs-small);
+  font-weight: var(--fw-medium);
+}
+
 .intro__head {
   display: flex;
   align-items: baseline;
@@ -278,6 +400,11 @@ onMounted(async () => {
   margin: 10px 0 20px;
   color: var(--text-2);
   line-height: var(--lh-body);
+}
+
+.intro__note {
+  color: var(--text-3);
+  font-size: var(--fs-small);
 }
 
 .features {
@@ -444,6 +571,14 @@ onMounted(async () => {
 }
 
 @media (max-width: 1024px) {
+  .main-section-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .main-section-card {
+    min-height: 0;
+  }
+
   .home__columns {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -458,6 +593,21 @@ onMounted(async () => {
 
   .topic-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 680px) {
+  .main-sections {
+    margin-top: 24px;
+  }
+
+  .main-sections__head {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .main-sections__head p {
+    text-align: left;
   }
 }
 </style>

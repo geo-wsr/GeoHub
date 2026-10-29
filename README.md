@@ -1,11 +1,11 @@
-# GeoHub · 地理学学习资料共享平台
+# 泉盒子的GeoHub
 
-面向地理学专业的前后端分离站点：一侧是带**上传审核**的学习资料库，一侧是带**楼层讨论**的论坛社区。
-前台是 Vue 单页应用，后端只提供 REST API 与中文管理后台。
+面向地理学专业的学习与教学站点，分为**资料分享、论坛、可视化实验室**三个主板块。
+主站使用 Vue，实验室使用 React；后端只提供 REST API 与中文管理后台。
 
 | 层 | 技术 |
 | --- | --- |
-| 前台 | Vue 3 · Vue Router · Vite · axios（设计令牌 + 深浅双主题） |
+| 前台 | Vue 3 · Vue Router · React 19 · Vite · axios（设计令牌 + 深浅双主题） |
 | 后端 | Django 5.2 LTS · Django REST Framework · django-allauth |
 | 后台 | Django Admin + SimpleUI（简体中文） |
 | 部署 | 前台 → GitHub Pages（静态托管）；后端 → 云服务器（gunicorn + Nginx） |
@@ -13,7 +13,9 @@
 
 ## 功能
 
-- **资料库**：分类筛选、标题/简介/标签模糊搜索、按最新或下载量排序、分页
+- **资料分享**：分类筛选、标题/简介/标签模糊搜索、按最新或下载量排序、分页
+- **可视化实验室**：按自然地理、人文地理、地信三类组织实验，当前包含大气受力、
+  杜能环和 Dijkstra 最短路径三个交互工作台；实验室目录按数据配置，后续可直接追加实验
 - **上传审核**：普通用户提交进审核队列，管理员通过/驳回（驳回必填理由）；
   作者可查看状态与驳回原因，修改后重新提交
 - **审核流水与站内通知**：提交/通过/驳回/重提全程留痕；审核结果与回复通过站内通知推送
@@ -45,6 +47,8 @@ copy .env.example .env          # 按需修改；.env 已被 gitignore
 cd D:\mywebsite\frontend
 npm install
 npm run dev      # http://127.0.0.1:5173，已配好到 8000 的接口代理
+npm run test:unit # 实验室纯算法与模型测试
+npm run test:acceptance # 需另开 5173/8000 服务，使用本机 Edge 做浏览器验收
 ```
 
 打包由 Django 托管：`npm run build`（产物进 `frontend/dist`，Django 会自动托管最新版本）。
@@ -66,7 +70,7 @@ npm run dev      # http://127.0.0.1:5173，已配好到 8000 的接口代理
 
 ```powershell
 cd D:\mywebsite\backend
-..\.venv\Scripts\python.exe manage.py test web     # 28 个接口用例
+..\.venv\Scripts\python.exe manage.py test web     # 46 个接口用例
 ```
 
 覆盖三级权限矩阵、上传审核闭环、论坛楼层结构、编辑权限与站内通知。
@@ -74,9 +78,9 @@ cd D:\mywebsite\backend
 ## 部署
 
 - 前台：推送到 `main` 后由 [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml)
-  构建并发布到 GitHub Pages
+  构建并发布到 GitHub Pages；主站与 `/lab/` 实验室页面会在同一次构建中产出
 - 后端：[`.github/workflows/deploy-backend.yml`](.github/workflows/deploy-backend.yml)
-  通过 SSH 拉代码 → 装依赖 → 迁移 → 重启 systemd 服务
+  触发 Render 蓝图部署，数据库使用 Neon PostgreSQL
 - 服务器样例配置： [`deploy/`](deploy/)（systemd unit、Nginx 反向代理）
 
 **详细步骤（Pages 开启、自定义域名、Secrets 配置、服务器准备、OAuth 创建）见
@@ -88,7 +92,7 @@ cd D:\mywebsite\backend
 GeoHub/
 ├── .github/workflows/     # 前端 Pages 部署、后端 SSH 部署
 ├── backend/               # Django 后端（manage.py / web 应用 / 迁移 / 测试）
-├── frontend/              # Vue 3 前端（组件 / 视图 / 设计令牌）
+├── frontend/              # Vue 主站 + React 可视化实验室 + 浏览器验收脚本
 ├── deploy/                # systemd 与 Nginx 样例
 ├── docs/                  # GitHub 集成操作手册
 └── AGENTS.md              # 面向 AI 编码代理的项目约定与踩坑记录

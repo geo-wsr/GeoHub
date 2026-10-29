@@ -22,7 +22,7 @@ const router = createRouter({
       path: '/materials',
       name: 'materials',
       component: () => import('@/views/MaterialListView.vue'),
-      meta: { title: '资料库' },
+      meta: { title: '资料分享' },
     },
     {
       path: '/materials/:id(\\d+)',
@@ -44,6 +44,19 @@ const router = createRouter({
       name: 'forum',
       component: () => import('@/views/ForumListView.vue'),
       meta: { title: '论坛' },
+    },
+    {
+      path: '/visualization',
+      name: 'visualization',
+      component: () => import('@/views/VisualizationPortalView.vue'),
+      meta: { title: '可视化实验室' },
+    },
+    {
+      path: '/visualization/:lab(von-thunen|dijkstra|atmosphere)',
+      name: 'visualization-lab',
+      component: () => import('@/views/VisualizationLabView.vue'),
+      props: true,
+      meta: { title: '可视化实验室', immersive: true },
     },
     {
       path: '/forum/topic/:id(\\d+)',
@@ -115,7 +128,7 @@ router.beforeEach(async (to) => {
 })
 
 router.afterEach((to) => {
-  document.title = to.meta.title ? `${to.meta.title} · 地理资料库` : '地理资料库'
+  document.title = to.meta.title ? `${to.meta.title} · 泉盒子的GeoHub` : '泉盒子的GeoHub'
 })
 
 // 路由懒加载失败的处理。

@@ -497,8 +497,8 @@ button.pill:hover {
 .md-body blockquote {
   margin: 0.8em 0;
   padding: 0.5em 0.9em;
-  border-left: 3px solid var(--border-strong);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
   background: var(--bg-hover);
   color: var(--text-2);
 }

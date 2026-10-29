@@ -22,15 +22,21 @@ export const themeState = reactive({ mode: readStored() })
 // 首屏立即应用，避免闪白
 apply(themeState.mode)
 
-/** 一键切换主题，并持久化到 localStorage。 */
-export function toggleTheme() {
-  themeState.mode = themeState.mode === 'dark' ? 'light' : 'dark'
+/** 设置主题；实验室内切换主题时也会通过这里同步回主站。 */
+export function setTheme(mode) {
+  if (!VALID.includes(mode) || themeState.mode === mode) return
+  themeState.mode = mode
   apply(themeState.mode)
   try {
     localStorage.setItem(STORAGE_KEY, themeState.mode)
   } catch {
     /* 存不进就只在本次会话生效 */
   }
+}
+
+/** 一键切换主题，并持久化到 localStorage。 */
+export function toggleTheme() {
+  setTheme(themeState.mode === 'dark' ? 'light' : 'dark')
 }
 
 export function useTheme() {

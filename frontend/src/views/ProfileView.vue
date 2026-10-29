@@ -283,10 +283,10 @@ onMounted(() => {
     <EmptyState
       v-else-if="!items.length"
       :title="`还没有${activeTabMeta?.label.slice(2)}`"
-      description="去资料库或论坛逛逛，产生的内容会出现在这里。"
+      description="去资料分享或论坛逛逛，产生的内容会出现在这里。"
     >
       <template #action>
-        <RouterLink class="btn btn--primary" :to="{ name: 'materials' }">浏览资料库</RouterLink>
+        <RouterLink class="btn btn--primary" :to="{ name: 'materials' }">浏览资料分享</RouterLink>
       </template>
     </EmptyState>
 
@@ -592,8 +592,9 @@ onMounted(() => {
 }
 
 .record.is-unread {
-  /* 未读通知左侧加一条强调色标识 */
-  border-left: 3px solid var(--color-accent);
+  /* 未读通知用完整细边框与底色标识，避免侧边色条造成视觉噪声。 */
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
 }
 
 .record__row {

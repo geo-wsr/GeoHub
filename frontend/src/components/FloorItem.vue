@@ -248,15 +248,15 @@ async function saveEdit(item) {
   font-size: var(--fs-small);
 }
 
-/* 二级回复：缩进 + 竖线引导 + 浅一层底色 */
+/* 二级回复：缩进 + 完整细边框 + 浅一层底色 */
 .subfloors {
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin: 12px 0 0;
   padding: 12px 14px 12px 16px;
-  border-left: 2px solid var(--border-strong);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   background: var(--bg-hover);
   list-style: none;
 }

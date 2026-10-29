@@ -129,7 +129,7 @@ watch(() => props.id, load, { immediate: true })
   <div class="container detail">
     <RouterLink class="back" :to="{ name: 'materials' }">
       <AppIcon name="chevronLeft" :size="14" />
-      返回资料库
+      返回资料分享
     </RouterLink>
 
     <div v-if="loading" class="detail__body">
@@ -146,8 +146,8 @@ watch(() => props.id, load, { immediate: true })
 
     <div v-else-if="missing" class="card detail__missing">
       <h2>资料不存在或已下架</h2>
-      <p class="text-muted">它可能已被上传者删除。你可以回到资料库看看别的。</p>
-      <RouterLink class="btn btn--primary" :to="{ name: 'materials' }">返回资料库</RouterLink>
+      <p class="text-muted">它可能已被上传者删除。你可以回到资料分享看看别的。</p>
+      <RouterLink class="btn btn--primary" :to="{ name: 'materials' }">返回资料分享</RouterLink>
     </div>
 
     <div v-else-if="material" class="detail__body">
@@ -204,7 +204,7 @@ watch(() => props.id, load, { immediate: true })
           >
             <StatusPill :status="material.status" />
             <span v-if="material.status === 'pending'">
-              资料已提交，正在等待管理员审核；通过后才会出现在公开资料库。
+              资料已提交，正在等待管理员审核；通过后才会出现在公开资料分享区。
             </span>
             <span v-else-if="material.status === 'rejected'">
               驳回理由：{{ material.review_note || '未填写' }}

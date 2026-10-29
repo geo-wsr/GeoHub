@@ -1,22 +1,30 @@
 {
-  "name": "mywebsite-frontend",
+  "name": "quanhezi-geohub-frontend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:unit": "vitest run src/visualization/app",
+    "test:acceptance": "node scripts/acceptance.mjs"
   },
   "dependencies": {
     "axios": "^1.20.0",
     "dompurify": "^3.4.16",
+    "katex": "^0.19.0",
     "markdown-it": "^15.0.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "vue": "^3.5.43",
     "vue-router": "^5.3.1"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.2",
     "@vitejs/plugin-vue": "^6.0.9",
-    "vite": "^8.3.1"
+    "playwright-core": "^1.64.1",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.5"
   }
 }

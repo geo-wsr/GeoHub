@@ -159,7 +159,7 @@ onMounted(async () => {
           type="text"
           placeholder="用逗号分隔，例如：空间分析, 复习"
         />
-        <span class="field__hint">标签会与资料库共用，方便全局搜索聚合。</span>
+        <span class="field__hint">标签会与资料分享区共用，方便全局搜索聚合。</span>
       </label>
 
       <!-- 底部：字数统计 + 发布按钮 -->
