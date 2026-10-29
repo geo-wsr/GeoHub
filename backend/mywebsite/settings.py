@@ -299,6 +299,20 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # 前端站点地址（GitHub Pages 域名或自定义域名），用于登录后跳回与 CSRF 白名单
 FRONTEND_URL = env('FRONTEND_URL', 'http://127.0.0.1:5173').rstrip('/')
 
+# 生产环境必须显式配置 FRONTEND_URL：默认值指向本地 dev 地址，一旦漏配，
+# GitHub 登录授权完成后会被 302 到 http://127.0.0.1:5173/oauth/callback
+# （issue #1 的线上事故根因）。与 SECRET_KEY 同理：宁可启动即报错，
+# 也不让生产用户被带偏到 localhost。
+if not DEBUG and (
+    not FRONTEND_URL
+    or FRONTEND_URL.startswith(('http://127.0.0.1', 'https://127.0.0.1'))
+    or FRONTEND_URL.startswith(('http://localhost', 'https://localhost'))
+):
+    raise ImproperlyConfigured(
+        'DJANGO_DEBUG=False 时必须通过环境变量 FRONTEND_URL 显式配置前端站点地址'
+        '（例如 https://www.bnugeohub.cn），否则 GitHub 登录回调会跳到本地 localhost'
+    )
+
 # 允许携带 Cookie 跨域调用接口的前端来源（逗号分隔；不能用 *）
 CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS', FRONTEND_URL)
 CORS_ALLOW_CREDENTIALS = True

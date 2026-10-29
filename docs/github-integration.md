@@ -89,6 +89,9 @@ GitHub 仓库（单仓）
    - **Authorization callback URL**：`https://api.example.com/accounts/github/login/callback/`
      （必须是**后端域名**，allauth 用它接收授权码；暂未绑域名就先用
      `https://<服务名>.onrender.com/accounts/github/login/callback/`）
+     ⚠️ 这里填错（比如填成 `http://localhost:5173/...`）会被 GitHub 拒绝授权或跳错地址；
+     另一种常见根因是后端 `FRONTEND_URL` 缺配（见 3.3 表格），授权完成后 302 到本地
+     5173 dev 地址——两者都表现为「OAuth 登录后回调到 localhost」（issue #1）
 3. 创建后记录 **Client ID**，并生成 **Client Secret**
 4. 把它们填进 Render 的环境变量（见 3.3），**不要**提交到仓库
 
@@ -216,7 +219,7 @@ $env:DST_S3_BUCKET='geohub-media'; $env:DST_S3_KEY='...'; $env:DST_S3_SECRET='..
 | `DJANGO_DEBUG` | `false` | `render.yaml` 已固定 |
 | `DJANGO_SECRET_KEY` | 自动生成 | 蓝图里 `generateValue: true`，不用手填 |
 | `DJANGO_ALLOWED_HOSTS` | `api.example.com,geohub-api.onrender.com` | 逗号分隔；`RENDER_EXTERNAL_HOSTNAME` 会被自动追加 |
-| `FRONTEND_URL` | `https://geo-wsr.github.io/GeoHub` | 登录成功后跳回的前端地址，**不带结尾斜杠** |
+| `FRONTEND_URL` | `https://geo-wsr.github.io/GeoHub` | 登录成功后跳回的前端地址，**不带结尾斜杠**；**必填**——`DEBUG=False` 时未配置或配成 localhost 会启动报错，防止 OAuth 回调被 302 到本地 5173（issue #1） |
 | `CORS_ALLOWED_ORIGINS` | `https://geo-wsr.github.io` | 只填**源**（协议+域名，不带仓库路径） |
 | `CSRF_TRUSTED_ORIGINS` | `https://geo-wsr.github.io` | 同上，否则跨域写操作全部 403 |
 | `DATABASE_URL` | `postgresql://…neon.tech/neondb?sslmode=require` | 见 3.1 |
