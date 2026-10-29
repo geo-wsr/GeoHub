@@ -12,7 +12,8 @@ services:
     rootDir: backend
     # requirements-prod.txt = requirements.txt + gunicorn
     buildCommand: pip install -r requirements-prod.txt && python manage.py collectstatic --noinput
-    startCommand: python manage.py migrate --noinput && gunicorn mywebsite.wsgi:application
+    # 后台直传课程 PDF 时允许较长的上传/存储耗时，避免 gunicorn 默认 30 秒超时。
+    startCommand: python manage.py migrate --noinput && gunicorn mywebsite.wsgi:application --timeout 300 --workers 2
     healthCheckPath: /api/categories/
     envVars:
       - key: PYTHON_VERSION

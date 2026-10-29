@@ -1,3 +1,5 @@
+import os
+
 from django.contrib import admin
 
 from .models import (
@@ -63,6 +65,15 @@ class MaterialAdmin(admin.ModelAdmin):
         'reviewed_at',
     )
     actions = ('approve_selected', 'reject_selected')
+
+    def save_model(self, request, obj, form, change):
+        """后台直传时同步文件元数据，避免卡片显示 0 B 或缺失扩展名。"""
+        uploaded = form.cleaned_data.get('file')
+        if uploaded:
+            obj.original_name = os.path.basename(uploaded.name)
+            obj.file_ext = os.path.splitext(uploaded.name)[1].lower()
+            obj.file_size = uploaded.size
+        super().save_model(request, obj, form, change)
 
     @admin.action(description='通过所选资料（设为已通过）')
     def approve_selected(self, request, queryset):

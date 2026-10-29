@@ -26,6 +26,9 @@ npm-debug.log*
 yarn-error.log*
 frontend/artifacts/
 
+# 本地课程参考 PDF，体积较大，不纳入源码仓库
+docs/reference/
+
 # 本地环境变量与密钥（.env.example 是模板，允许入库）
 .env
 .env.*
