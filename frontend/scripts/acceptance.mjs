@@ -81,6 +81,12 @@ for (const viewport of viewports) {
     (await page.locator('.brand__text').innerText()) === '泉盒子的GeoHub',
     `${viewport.name} 站名没有更新`,
   )
+  const faviconUrl = await page.locator('link[rel="icon"]').getAttribute('href')
+  const faviconStatus = await page.evaluate(async (href) => {
+    const response = await fetch(href)
+    return response.status
+  }, faviconUrl)
+  check(faviconStatus === 200, `${viewport.name} 选项卡图标加载失败`)
   check(
     (await page.locator('.intro').count()) === 1 &&
       (await page.getByRole('heading', { name: /热门下载/ }).count()) === 1 &&
