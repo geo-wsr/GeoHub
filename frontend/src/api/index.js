@@ -24,17 +24,32 @@ const client = axios.create({
 // GET 是幂等的，静默重试两次再判定"离线"，能挡掉绝大多数冷启动误报。
 const RETRY_LIMIT = 2
 const RETRY_DELAY = 2500
+const AUTH_TIMEOUT = 120000
+const WARMUP_FRESH_MS = 120000
+let warmupPromise = null
+let warmupReadyAt = 0
 
 /**
  * 预热：用最轻的 GET 把可能已休眠的实例唤醒。
- * 写请求（尤其是上传）不该白等冷启动，调用前先走一遍这个。
+ * 登录页进入时先调用一次，提交登录前再次复用同一个结果；
+ * 成功后的短时间窗口内不会重复发送预热请求。
  */
-export async function ensureAwake() {
-  try {
-    await client.get('/categories/')
-  } catch {
-    // 唤醒失败不阻塞业务请求，让真正的错误在业务调用处抛出
-  }
+export async function ensureAwake({ force = false } = {}) {
+  if (!force && Date.now() - warmupReadyAt < WARMUP_FRESH_MS) return true
+  if (warmupPromise) return warmupPromise
+
+  warmupPromise = client
+    .get('/categories/', { timeout: AUTH_TIMEOUT, __skipRetry: true })
+    .then(() => {
+      warmupReadyAt = Date.now()
+      return true
+    })
+    .catch(() => false)
+    .finally(() => {
+      warmupPromise = null
+    })
+
+  return warmupPromise
 }
 
 // CSRF token 缓存：跨域时前端读不到后端的 csrftoken Cookie，只能用响应体里的值
@@ -72,7 +87,7 @@ client.interceptors.response.use(
     const attempt = config.__retryCount || 0
 
     // 冷启动：幂等的 GET 自动重试（间隔 2.5s / 5s），重试期间不显示离线横幅
-    if (networkError && method === 'get' && attempt < RETRY_LIMIT) {
+    if (networkError && !config.__skipRetry && method === 'get' && attempt < RETRY_LIMIT) {
       config.__retryCount = attempt + 1
       await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY * (attempt + 1)))
       return client.request(config)
@@ -85,6 +100,12 @@ client.interceptors.response.use(
 
 /** 把 DRF 的各种错误结构统一成一句可展示的中文提示。 */
 export function errorMessage(error) {
+  if (
+    error?.code === 'ECONNABORTED' ||
+    /timeout of \d+ms exceeded/i.test(error?.message || '')
+  ) {
+    return '服务器响应超时。后端免费实例可能仍在冷启动，请稍后再试；当前输入内容会保留。'
+  }
   const data = error?.response?.data
   if (!data) return error?.message || '网络异常，请稍后重试。'
   if (typeof data === 'string') return '请求失败，请稍后重试。'
@@ -105,9 +126,27 @@ export const api = {
     return data
   },
   me: () => client.get('/auth/me/').then((r) => r.data),
-  login: (payload) => client.post('/auth/login/', payload).then((r) => r.data),
-  register: (payload) => client.post('/auth/register/', payload).then((r) => r.data),
-  logout: () => client.post('/auth/logout/').then((r) => r.data),
+  login: async (payload) => {
+    const data = await client
+      .post('/auth/login/', payload, { timeout: AUTH_TIMEOUT })
+      .then((r) => r.data)
+    if (data.csrfToken) csrfToken = data.csrfToken
+    return data
+  },
+  register: async (payload) => {
+    const data = await client
+      .post('/auth/register/', payload, { timeout: AUTH_TIMEOUT })
+      .then((r) => r.data)
+    if (data.csrfToken) csrfToken = data.csrfToken
+    return data
+  },
+  logout: async () => {
+    const data = await client
+      .post('/auth/logout/', null, { timeout: AUTH_TIMEOUT })
+      .then((r) => r.data)
+    if (data.csrfToken) csrfToken = data.csrfToken
+    return data
+  },
 
   categories: () => client.get('/categories/').then((r) => r.data),
   // 标签：tags() 取全部（可按分类过滤，上传页/侧栏据此联动）

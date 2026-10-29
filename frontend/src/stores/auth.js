@@ -21,18 +21,32 @@ export async function loadCurrentUser(force = false) {
 }
 
 export async function signIn(payload) {
+  await api.ensureAwake()
   const data = await api.login(payload)
   authState.user = data.user
   authState.loaded = true
-  // 登录成功后 Django 会轮换 CSRF token，必须重新取一次，否则后续写请求 403
-  await api.ensureCsrf()
+  // 新后端会随登录响应返回轮换后的 token；兼容旧后端时再补取一次。
+  if (!data.csrfToken) {
+    try {
+      await api.ensureCsrf()
+    } catch {
+      // 登录已经成功，不能因为补充 CSRF 失败而显示“登录失败”。
+    }
+  }
   return data.user
 }
 
 export async function signUp(payload) {
+  await api.ensureAwake()
   const data = await api.register(payload)
   applyUser(data.user)
-  await api.ensureCsrf()
+  if (!data.csrfToken) {
+    try {
+      await api.ensureCsrf()
+    } catch {
+      // 注册与登录已经成功；后续写请求会由错误提示负责恢复。
+    }
+  }
   return data.user
 }
 
@@ -44,10 +58,15 @@ export function applyUser(user) {
 }
 
 export async function signOut() {
-  await api.logout()
+  const data = await api.logout()
   authState.user = null
-  // 登出同样会轮换 token
-  await api.ensureCsrf()
+  if (!data.csrfToken) {
+    try {
+      await api.ensureCsrf()
+    } catch {
+      // 已退出登录，补充 token 失败不应让用户停留在旧状态。
+    }
+  }
 }
 
 export function useAuth() {

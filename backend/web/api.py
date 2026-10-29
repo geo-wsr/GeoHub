@@ -169,7 +169,11 @@ def register_view(request):
     )
     login(request, user)
     return Response(
-        {'user': CurrentUserSerializer(user).data},
+        {
+            'user': CurrentUserSerializer(user).data,
+            # 登录会轮换 CSRF token；随响应返回，避免前端再发一次请求。
+            'csrfToken': get_token(request),
+        },
         status=status.HTTP_201_CREATED,
     )
 
@@ -184,14 +188,24 @@ def login_view(request):
     if user is None:
         return Response({'detail': '用户名或密码不正确。'}, status=status.HTTP_400_BAD_REQUEST)
     login(request, user)
-    return Response({'user': CurrentUserSerializer(user).data})
+    return Response(
+        {
+            'user': CurrentUserSerializer(user).data,
+            'csrfToken': get_token(request),
+        }
+    )
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
     logout(request)
-    return Response({'detail': '已退出登录。'})
+    return Response(
+        {
+            'detail': '已退出登录。',
+            'csrfToken': get_token(request),
+        }
+    )
 
 
 @api_view(['GET'])

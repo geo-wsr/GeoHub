@@ -114,6 +114,18 @@ for (const viewport of viewports) {
     fullPage: true,
   })
 
+  await gotoAndSettle(page, '/login', '.login')
+  const backendNotice = await page.locator('.backend-notice').innerText()
+  check(
+    backendNotice.includes('Render') && backendNotice.includes('120 秒'),
+    `${viewport.name} 登录页缺少冷启动原因或 120 秒说明`,
+  )
+  await assertNoHorizontalOverflow(page, `${viewport.name} 登录页`)
+  await page.screenshot({
+    path: resolve(outputDir, `login-${viewport.name}.png`),
+    fullPage: true,
+  })
+
   await page.close()
 }
 

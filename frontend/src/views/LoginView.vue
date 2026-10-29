@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { ADMIN_URL, api, errorMessage } from '@/api'
+import { ADMIN_URL, api, ensureAwake, errorMessage } from '@/api'
 import AppIcon from '@/components/AppIcon.vue'
 import { signIn, signUp } from '@/stores/auth'
 import { pushToast } from '@/stores/toast'
@@ -12,6 +12,29 @@ const router = useRouter()
 
 // 第三方登录入口由后端 /api/auth/providers/ 下发，前端不硬编码后端路径
 const github = ref({ enabled: false, loginUrl: '' })
+const backendStatus = ref('checking')
+
+const backendNotice = computed(() => {
+  if (backendStatus.value === 'ready') {
+    return {
+      title: '后端服务已连接',
+      description:
+        'Render 免费实例闲置后会休眠。当前服务已醒来；以后遇到冷启动会自动预热，登录请求最长等待 120 秒。',
+    }
+  }
+  if (backendStatus.value === 'slow') {
+    return {
+      title: '后端暂未响应',
+      description:
+        '可能是免费实例仍在冷启动或当前网络波动。可以重新检测，也可以直接提交登录，请求最多等待 120 秒。',
+    }
+  }
+  return {
+    title: '正在连接后端服务',
+    description:
+      '后端部署在 Render 免费实例上，闲置后会休眠。首次访问通常需要 30–120 秒唤醒，页面正在自动预热，请保持当前页。',
+  }
+})
 
 function loginWithGitHub() {
   if (!github.value.enabled) {
@@ -22,16 +45,29 @@ function loginWithGitHub() {
   window.location.href = github.value.loginUrl
 }
 
-onMounted(async () => {
+async function checkBackend(force = false) {
+  backendStatus.value = 'checking'
+  const ready = await ensureAwake({ force })
+  backendStatus.value = ready ? 'ready' : 'slow'
+}
+
+async function loadAuthProviders() {
   try {
     const data = await api.authProviders()
     github.value = {
       enabled: Boolean(data.github?.enabled),
       loginUrl: data.github?.login_url || '',
     }
+    backendStatus.value = 'ready'
   } catch {
     github.value = { enabled: false, loginUrl: '' }
   }
+}
+
+onMounted(() => {
+  // 两个轻量请求并行触发：一个负责冷启动预热，一个加载第三方登录入口。
+  checkBackend()
+  loadAuthProviders()
 })
 
 // 支持 /login?mode=register 直接落到注册页（首页的登录引导弹窗会这样跳）
@@ -81,6 +117,12 @@ async function submit() {
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : null
     router.push(redirect || { name: 'home' })
   } catch (err) {
+    if (
+      err?.code === 'ECONNABORTED' ||
+      /timeout of \d+ms exceeded/i.test(err?.message || '')
+    ) {
+      backendStatus.value = 'slow'
+    }
     error.value = errorMessage(err)
   } finally {
     submitting.value = false
@@ -97,6 +139,27 @@ async function submit() {
           <h1 class="login__title">{{ title }}</h1>
           <p class="text-small text-muted">登录后可以上传资料、发表评论与收藏内容。</p>
         </div>
+      </div>
+
+      <div
+        class="backend-notice"
+        :class="`backend-notice--${backendStatus}`"
+        role="status"
+        aria-live="polite"
+      >
+        <span class="backend-notice__status" aria-hidden="true"></span>
+        <div class="backend-notice__copy">
+          <strong>{{ backendNotice.title }}</strong>
+          <p>{{ backendNotice.description }}</p>
+        </div>
+        <button
+          v-if="backendStatus === 'slow'"
+          class="backend-notice__retry"
+          type="button"
+          @click="checkBackend(true)"
+        >
+          重新检测
+        </button>
       </div>
 
       <div class="login__tabs">
@@ -155,7 +218,15 @@ async function submit() {
         <p v-if="error" class="field__error login__error">{{ error }}</p>
 
         <button class="btn btn--primary btn--block" type="submit" :disabled="submitting">
-          {{ submitting ? '提交中…' : mode === 'login' ? '登录' : '注册并登录' }}
+          {{
+            submitting
+              ? backendStatus === 'ready'
+                ? '正在验证账号…'
+                : '正在连接服务器…'
+              : mode === 'login'
+                ? '登录'
+                : '注册并登录'
+          }}
         </button>
       </form>
 
@@ -217,6 +288,83 @@ async function submit() {
   font-size: var(--fs-h2);
 }
 
+.backend-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 12px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--color-secondary-soft);
+}
+
+.backend-notice__status {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--color-secondary);
+}
+
+.backend-notice--checking .backend-notice__status {
+  animation: status-breathe 1.2s var(--ease) infinite;
+}
+
+.backend-notice--ready {
+  background: var(--status-approved-bg);
+  border-color: var(--status-approved-border);
+}
+
+.backend-notice--ready .backend-notice__status {
+  background: var(--color-success);
+}
+
+.backend-notice--slow {
+  background: var(--status-pending-bg);
+  border-color: var(--status-pending-border);
+}
+
+.backend-notice--slow .backend-notice__status {
+  background: var(--status-pending-text);
+}
+
+.backend-notice__copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.backend-notice__copy strong {
+  display: block;
+  color: var(--text-1);
+  font-size: var(--fs-h4);
+}
+
+.backend-notice__copy p {
+  margin-top: 3px;
+  color: var(--text-2);
+  font-size: var(--fs-small);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.backend-notice__retry {
+  flex: none;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--status-pending-text);
+  font-size: var(--fs-small);
+  cursor: pointer;
+}
+
+.backend-notice__retry:hover {
+  background: var(--bg-hover);
+}
+
 .login__tabs {
   display: flex;
   gap: 4px;
@@ -270,5 +418,35 @@ async function submit() {
 .login__foot {
   margin-top: 16px;
   text-align: center;
+}
+
+@keyframes status-breathe {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (max-width: 480px) {
+  .login {
+    padding-top: 28px;
+  }
+
+  .login__card {
+    padding: 22px 18px;
+  }
+
+  .backend-notice {
+    flex-wrap: wrap;
+  }
+
+  .backend-notice__retry {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backend-notice--checking .backend-notice__status {
+    animation: none;
+  }
 }
 </style>

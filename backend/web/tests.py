@@ -507,6 +507,35 @@ class SearchTests(BaseAPITestCase):
         self.assertEqual(payload['topic_total'], 0)
 
 
+class AuthenticationSessionTests(BaseAPITestCase):
+    """登录响应直接带回轮换后的 CSRF token，避免额外请求拖慢或误报失败。"""
+
+    def test_login_returns_rotated_csrf_token_and_session(self):
+        csrf = self.client.get('/api/auth/csrf/')
+        self.assertEqual(csrf.status_code, 200)
+
+        response = self.client.post(
+            '/api/auth/login/',
+            {'username': 'student01', 'password': 'test-pass-2026'},
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['user']['username'], 'student01')
+        self.assertTrue(payload['csrfToken'])
+
+        me = self.client.get('/api/auth/me/')
+        self.assertEqual(me.status_code, 200)
+        self.assertEqual(me.json()['user']['username'], 'student01')
+
+    def test_logout_clears_session_and_returns_fresh_csrf_token(self):
+        self.client.force_login(self.user)
+        response = self.client.post('/api/auth/logout/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['csrfToken'])
+        self.assertIsNone(self.client.get('/api/auth/me/').json()['user'])
+
+
 class GitHubOAuthTests(BaseAPITestCase):
     """GitHub 登录接线：确认授权地址、回调路径与 scope 正确。
 

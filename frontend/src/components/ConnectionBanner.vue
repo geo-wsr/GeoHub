@@ -30,7 +30,7 @@ async function retry() {
         <span class="conn__text">
           暂时连不上后端服务，页面数据可能显示不全。
           <span class="conn__hint">
-            免费实例休眠后唤醒需要 30~60 秒，稍等片刻再点「重试」；接口地址：<code>{{ API_ROOT }}</code>
+            Render 免费实例休眠后唤醒通常需要 30~120 秒，稍等片刻再点「重试」；接口地址：<code>{{ API_ROOT }}</code>
           </span>
         </span>
         <button class="conn__btn" type="button" :disabled="retrying" @click="retry">
